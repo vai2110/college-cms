@@ -1,11 +1,15 @@
 {
-  "name": "collegecms-core",
-  "version": "2.0.0",
+  "name": "collegecms",
+  "version": "3.0.0",
   "private": true,
+  "description": "Private editorial CMS for MBA college pages",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.19.2"
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0"
   }
 }
