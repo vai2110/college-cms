@@ -1,0 +1,18 @@
+{
+  "colleges": [
+    {
+      "id": "iit-delhi-dms",
+      "name": "IIT Delhi DMS",
+      "slug": "iit-delhi-dms",
+      "pages": [
+        {
+          "id": "overview",
+          "name": "Overview",
+          "type": "overview",
+          "source": "content/iit-delhi-dms/overview.html",
+          "status": "live"
+        }
+      ]
+    }
+  ]
+}
