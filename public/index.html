@@ -24,7 +24,12 @@
 <div id="appView" class="app" style="display:none">
 <aside class="side"><div class="brand">College<span>CMS</span></div><div class="nav active">Dashboard</div><div class="nav">College Pages</div><div class="nav">Templates</div><div class="nav">SEO Centre</div><div class="nav">Publish History</div></aside>
 <main>
-  <div class="top"><div><h1>Editorial Dashboard</h1><div class="muted">One workspace for existing and future college pages.</div></div><div class="actions"><button class="btn" onclick="syncPages()">↻ Sync Website Pages</button><button class="btn" onclick="modal('college')">+ Add College</button><button class="btn primary" onclick="modal('page')">+ Create Page</button><button class="btn" onclick="logout()">Sign out</button></div></div>
+  <div class="top"><div><h1>Editorial Dashboard</h1><div class="muted">One workspace for existing and future college pages.</div>
+  </div><div class="actions"><button class="btn" onclick="syncPages()">
+    ↻ Sync Website Pages</button><button class="btn" onclick="modal('college')">+ Add College
+    </button><button class="btn primary" onclick="modal('page')">+ Create Page
+    </button><button class="btn" onclick="logout()">Sign out</button></div>
+  </div>
   <div id="notice" class="notice"></div>
   <div class="stats"><div class="card"><div class="muted">Colleges</div><div id="collegeCount" class="num">—</div></div><div class="card"><div class="muted">Total Pages</div><div id="pageCount" class="num">—</div></div><div class="card"><div class="muted">Live Pages</div><div id="liveCount" class="num">—</div></div><div class="card"><div class="muted">Draft / Discovered</div><div id="draftCount" class="num">—</div></div></div>
   <div class="grid">
@@ -130,10 +135,79 @@ async function edit(id){current=id;try{const d=await api('/api/page/'+encodeURIC
 function cmd(c){if(c==='createLink'){const u=prompt('URL');if(u)document.execCommand('createLink',false,u)}else document.execCommand(c)}
 async function save(){try{const old=await api('/api/page/'+encodeURIComponent(current)),doc=new DOMParser().parseFromString(old.html,'text/html');doc.body.innerHTML=$('editor').innerHTML;await api('/api/page/'+encodeURIComponent(current),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({html:'<!doctype html>'+doc.documentElement.outerHTML})});alert('Draft saved successfully.');await load()}catch(e){showNotice(e.message)}}
 async function publish(){try{await save();const r=await api('/api/page/'+encodeURIComponent(current)+'/publish',{method:'POST'});alert(r.message||'Published successfully.');await load()}catch(e){showNotice(e.message)}}
-async function syncPages(){try{clearNotice();const r=await api('/api/sync/discover',{method:'POST'});await load();showNotice(`Sync complete: ${r.scanned||0} HTML files scanned and ${(r.added||[]).length} new CMS pages added.`)}catch(e){showNotice(e.message)}}
-function modal(x){if(x==='page'&&(!data||!data.colleges||!data.colleges.length)){showNotice('Add or sync a college before creating a page.');return}$(`${x}Modal`).style.display='grid'}function closeModal(){document.querySelectorAll('.modal').forEach(x=>x.style.display='none')}
-async function addCollege(){try{const d=await api('/api/colleges',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:$('collegeName').value,slug:$('collegeSlug').value})});closeModal();await load();showNotice(`College created: ${d.id}`)}catch(e){showNotice(e.message)}}
-async function addPage(){try{const d=await api('/api/pages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({collegeId:$('pageCollege').value,type:$('pageType').value,name:$('pageName').value||$('pageType').options[$('pageType').selectedIndex].text})});closeModal();await load();showNotice(`Page created: ${d.page}`)}catch(e){showNotice(e.message)}}
+async function syncPages()
+{try{clearNotice();const r=await api('/api/sync/discover',{method:'POST'});
+     await load();
+     showNotice(`Sync complete: ${r.scanned||0} HTML files scanned and ${(r.added||[]).length} new CMS pages added.`)}
+catch(e){showNotice(e.message)}}
+function closeModal(){
+  $('#modal').style.display = 'none';
+  $('#modalContent').innerHTML = '';
+}
+
+function modal(x){
+  if(x === 'page' && (!data || !data.colleges || !data.colleges.length)){
+    showNotice('Add or sync a college before creating a page.');
+    return;
+  }
+
+  const content = $('#modalContent');
+
+  if(x === 'college'){
+    content.innerHTML = `
+      <h2>Add College</h2>
+      <label>College Name</label>
+      <input id="collegeName" placeholder="Enter college name">
+      <div style="display:flex;gap:10px;margin-top:20px;">
+        <button class="btn primary" onclick="addCollege()">Add College</button>
+        <button class="btn" onclick="closeModal()">Cancel</button>
+      </div>
+    `;
+  }
+
+  if(x === 'page'){
+    content.innerHTML = `
+      <h2>Create Page</h2>
+
+      <label>Select College</label>
+      <select id="pageCollege">
+        ${data.colleges.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+      </select>
+
+      <label>Page Name</label>
+      <input id="pageName" placeholder="Enter page name">
+
+      <label>Page Type</label>
+      <select id="pageType">
+        <option value="overview">Overview</option>
+        <option value="admission">Admission</option>
+        <option value="courses">Courses</option>
+        <option value="fees">Fees</option>
+        <option value="placement">Placement</option>
+      </select>
+
+      <div style="display:flex;gap:10px;margin-top:20px;">
+        <button class="btn primary" onclick="addPage()">Create Page</button>
+        <button class="btn" onclick="closeModal()">Cancel</button>
+      </div>
+    `;
+  }
+
+  $('#modal').style.display = 'grid';
+}
+async function addCollege(){try{const d=await api('/api/colleges',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name:$('collegeName').value,slug:$('collegeSlug').value})});closeModal();await load();
+    showNotice(`College created: ${d.id}`)}catch(e){showNotice(e.message)}}
+async function addPage(){try{const d=await api('/api/pages',{method:'POST',headers:{'Content-Type':'application/json'},body:
+  JSON.stringify({collegeId:$('pageCollege').value,type:$('pageType').value,name:$('pageName').value||$('pageType').options[$('pageType').selectedIndex].text})});
+                closeModal();await load();showNotice(`Page created: ${d.page}`)}catch(e){showNotice(e.message)}}
 checkSession();
 </script>
-</body></html>
+  <div id="modal" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div id="modalContent"></div>
+  </div>
+</div>
+</body>
+</html>
