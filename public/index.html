@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CollegeCMS</title>
 <style>
-:root{--nav:#102a56;--blue:#2563eb;--bg:#f4f6fa;--line:#e1e6ee;--text:#172033;--muted:#687386;--danger:#c0362c}*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text)}button,input,select{font:inherit}.app{display:flex;min-height:100vh}.side{width:240px;background:var(--nav);color:#fff;padding:22px 14px}.brand{font-size:23px;font-weight:800;padding:5px 12px 30px}.brand span{color:#8ab8ff}.side .nav{padding:11px 12px;color:#dce7fa;font-size:13px;border-radius:8px;margin:4px 0}.side .active{background:#1d417d}main{flex:1;padding:28px 36px}.top{display:flex;justify-content:space-between;gap:15px;align-items:center}.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}h1{margin:0;font-size:28px}.muted{color:var(--muted);font-size:13px}.btn{padding:10px 14px;border:1px solid var(--line);background:#fff;border-radius:8px;font-weight:700;cursor:pointer}.primary{background:var(--blue);border-color:var(--blue);color:#fff}.danger{color:var(--danger)}.notice{display:none;margin:18px 0;padding:12px 14px;border:1px solid #f1c8c5;background:#fff5f4;border-radius:9px;color:#8f2d27}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin:22px 0}.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:17px}.num{font-size:25px;font-weight:800;margin-top:8px}.grid{display:grid;grid-template-columns:1fr 1.5fr;gap:20px}.college{padding:15px;border-bottom:1px solid var(--line);cursor:pointer}.college:hover{background:#f8fbff}.page{padding:12px;margin:8px 0;border:1px solid var(--line);border-radius:8px;cursor:pointer}.badge{font-size:10px;padding:4px 7px;border-radius:20px;background:#eaf8f1;color:#168c60;float:right}.toolbar{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}.tool{padding:7px 10px;border:1px solid var(--line);background:#fff;border-radius:6px;cursor:pointer}.canvas{border:1px solid var(--line);border-radius:10px;background:#fff;min-height:600px;overflow:auto}.canvas [contenteditable]{min-height:600px;outline:none}.modal{position:fixed;inset:0;background:#0007;display:none;place-items:center}.dialog{background:#fff;padding:22px;border-radius:12px;width:min(500px,92vw)}label{display:block;font-size:12px;font-weight:700;margin-top:12px}input,select{width:100%;padding:10px;border:1px solid var(--line);border-radius:7px;margin-top:5px}.login{min-height:100vh;display:grid;place-items:center;padding:20px}.login-card{width:min(410px,100%);background:#fff;border:1px solid var(--line);border-radius:16px;padding:30px;box-shadow:0 12px 40px #102a5620}.login-card h1{font-size:25px;margin:0 0 8px}.login-error{display:none;color:#9d2920;font-size:13px;margin-top:12px}.loading{padding:35px;text-align:center;color:var(--muted)}@media(max-width:850px){.side{display:none}main{padding:18px}.stats,.grid{grid-template-columns:1fr}}
+:root{--nav:#102a56;--blue:#2563eb;--bg:#f4f6fa;--line:#e1e6ee;--text:#172033;--muted:#687386;--danger:#c0362c}*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text)}button,input,select{font:inherit}.app{display:flex;min-height:100vh}.side{width:240px;background:var(--nav);color:#fff;padding:22px 14px}.brand{font-size:23px;font-weight:800;padding:5px 12px 30px}.brand span{color:#8ab8ff}.side .nav{padding:11px 12px;color:#dce7fa;font-size:13px;border-radius:8px;margin:4px 0}.side .active{background:#1d417d}main{flex:1;padding:28px 36px}.top{display:flex;justify-content:space-between;gap:15px;align-items:center}.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}h1{margin:0;font-size:28px}.muted{color:var(--muted);font-size:13px}.btn{padding:10px 14px;border:1px solid var(--line);background:#fff;border-radius:8px;font-weight:700;cursor:pointer}.primary{background:var(--blue);border-color:var(--blue);color:#fff}.danger{color:var(--danger)}.notice{display:none;margin:18px 0;padding:12px 14px;border:1px solid #f1c8c5;background:#fff5f4;border-radius:9px;color:#8f2d27}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin:22px 0}.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:17px}.num{font-size:25px;font-weight:800;margin-top:8px}.grid{display:block}.college{padding:15px;border-bottom:1px solid var(--line);cursor:pointer}.college:hover{background:#f8fbff}.page{padding:12px;margin:8px 0;border:1px solid var(--line);border-radius:8px;cursor:pointer}.badge{font-size:10px;padding:4px 7px;border-radius:20px;background:#eaf8f1;color:#168c60;float:right}.toolbar{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}.tool{padding:7px 10px;border:1px solid var(--line);background:#fff;border-radius:6px;cursor:pointer}.canvas{border:1px solid var(--line);border-radius:10px;background:#fff;min-height:600px;overflow:auto}.canvas [contenteditable]{min-height:600px;outline:none}.modal{position:fixed;inset:0;background:#0007;display:none;place-items:center}.dialog{background:#fff;padding:22px;border-radius:12px;width:min(500px,92vw)}label{display:block;font-size:12px;font-weight:700;margin-top:12px}input,select{width:100%;padding:10px;border:1px solid var(--line);border-radius:7px;margin-top:5px}.login{min-height:100vh;display:grid;place-items:center;padding:20px}.login-card{width:min(410px,100%);background:#fff;border:1px solid var(--line);border-radius:16px;padding:30px;box-shadow:0 12px 40px #102a5620}.login-card h1{font-size:25px;margin:0 0 8px}.login-error{display:none;color:#9d2920;font-size:13px;margin-top:12px}.loading{padding:35px;text-align:center;color:var(--muted)}@media(max-width:850px){.side{display:none}main{padding:18px}.stats,.grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -27,7 +27,43 @@
   <div class="top"><div><h1>Editorial Dashboard</h1><div class="muted">One workspace for existing and future college pages.</div></div><div class="actions"><button class="btn" onclick="syncPages()">↻ Sync Website Pages</button><button class="btn" onclick="modal('college')">+ Add College</button><button class="btn primary" onclick="modal('page')">+ Create Page</button><button class="btn" onclick="logout()">Sign out</button></div></div>
   <div id="notice" class="notice"></div>
   <div class="stats"><div class="card"><div class="muted">Colleges</div><div id="collegeCount" class="num">—</div></div><div class="card"><div class="muted">Total Pages</div><div id="pageCount" class="num">—</div></div><div class="card"><div class="muted">Live Pages</div><div id="liveCount" class="num">—</div></div><div class="card"><div class="muted">Draft / Discovered</div><div id="draftCount" class="num">—</div></div></div>
-  <div class="grid"><section class="card"><b>Colleges</b><div class="muted" style="margin:5px 0 12px">Select a college to view all connected pages.</div><div id="colleges"></div></section><section class="card" id="workspace"><b>Pages</b><div class="muted" style="margin-top:8px">Select a college and page to start editing.</div></section></div>
+  <div class="grid">
+  <section class="card" id="workspace">
+    <b>Pages</b>
+    <div class="muted" style="margin-top:8px">
+      Select a college and page to start editing.
+    </div>
+  </section>
+<div class="grid">
+  <section class="card" id="workspace">
+
+    <div style="display:flex;gap:15px;align-items:end;flex-wrap:wrap">
+      
+      <div style="flex:1;min-width:250px">
+        <label>Select College</label>
+        <select id="collegeSelector" onchange="selectCollege(this.value)">
+          <option value="">Select a college</option>
+        </select>
+      </div>
+
+      <div style="flex:1;min-width:250px">
+        <label>Select Page</label>
+        <select id="pageSelector" onchange="selectPage(this.value)" disabled>
+          <option value="">Select a page</option>
+        </select>
+      </div>
+
+    </div>
+
+    <div id="editorArea" style="margin-top:20px">
+      <b>Pages</b>
+      <div class="muted" style="margin-top:8px">
+        Select a college and page to start editing.
+      </div>
+    </div>
+
+  </section>
+</div>
 </main></div>
 
 <div class="modal" id="collegeModal"><div class="dialog"><h3>Add New College</h3><label>College Name</label><input id="collegeName" placeholder="e.g. IIM Lucknow"><label>URL Slug (optional)</label><input id="collegeSlug" placeholder="iim-lucknow"><div style="margin-top:18px;text-align:right"><button class="btn" onclick="closeModal()">Cancel</button> <button class="btn primary" onclick="addCollege()">Create College</button></div></div></div>
@@ -42,10 +78,55 @@ async function api(url,options={}){const r=await fetch(url,options);let d={};try
 async function checkSession(){try{const d=await api('/api/me');if(d.authenticated){$('loginView').style.display='none';$('appView').style.display='flex';await load()}else{$('loginView').style.display='grid';$('appView').style.display='none'}}catch(e){$('loginError').style.display='block';$('loginError').textContent='Unable to contact the CMS server.'}}
 $('loginForm').addEventListener('submit',async e=>{e.preventDefault();$('loginError').style.display='none';$('loginButton').disabled=true;$('loginButton').textContent='Signing in...';try{await api('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:$('loginUsername').value,password:$('loginPassword').value})});$('loginView').style.display='none';$('appView').style.display='flex';await load()}catch(err){$('loginError').textContent=err.message;$('loginError').style.display='block'}finally{$('loginButton').disabled=false;$('loginButton').textContent='Sign in'}});
 async function logout(){try{await api('/api/logout',{method:'POST'});location.reload()}catch(e){showNotice(e.message)}}
-async function load(){clearNotice();try{data=await api('/api/colleges');const cs=data.colleges||[],ps=cs.flatMap(c=>c.pages||[]);$('collegeCount').textContent=cs.length;$('pageCount').textContent=ps.length;$('liveCount').textContent=ps.filter(p=>p.status==='live').length;$('draftCount').textContent=ps.filter(p=>p.status!=='live').length;$('colleges').innerHTML=cs.length?cs.map(c=>`<div class="college" onclick="showCollege('${c.id}')"><b>${escapeHtml(c.name)}</b><div class="muted">${c.pages.length} page(s)</div></div>`).join(''):'<div class="muted" style="padding:18px 0">No colleges connected yet. Use Sync Website Pages or add a college.</div>';$('pageCollege').innerHTML=cs.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('')}catch(e){if(e.status===401){return checkSession()}showNotice(e.message)}}
+async function load(){clearNotice();try{data=await api('/api/colleges');const cs=data.colleges||[],ps=cs.flatMap(c=>c.pages||[]);$('collegeCount').textContent=cs.length;$('pageCount').textContent=ps.length;$('liveCount').textContent=ps.filter(p=>p.status==='live').length;$('draftCount').textContent=ps.filter(p=>p.status!=='live').length;
+$('collegeSelector').innerHTML =
+  '<option value="">Select a college</option>' +
+  cs.map(c =>
+    `<option value="${c.id}">${escapeHtml(c.name)} (${c.pages.length} page${c.pages.length !== 1 ? 's' : ''})</option>`
+  ).join('');
+                                          $('pageCollege').innerHTML=cs.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('')}catch(e){if(e.status===401){return checkSession()}showNotice(e.message)}}
 function escapeHtml(v){const d=document.createElement('div');d.textContent=v||'';return d.innerHTML}
-function showCollege(id){const c=data.colleges.find(x=>x.id===id);$('workspace').innerHTML=`<b>${escapeHtml(c.name)}</b><div class="muted" style="margin:5px 0 12px">Existing, CMS-created and automatically discovered pages appear together.</div>`+(c.pages.length?c.pages.map(p=>`<div class="page" onclick="edit('${c.id}:${p.id}')"><b>${escapeHtml(p.name)}</b><span class="badge">${escapeHtml(p.status)}</span><div class="muted">${escapeHtml(p.type)}</div></div>`).join(''):'<div class="muted">No pages connected yet.</div>')}
-async function edit(id){current=id;try{const d=await api('/api/page/'+encodeURIComponent(id));const doc=new DOMParser().parseFromString(d.html,'text/html');$('workspace').innerHTML=`<div class="top"><div><b>${escapeHtml(d.college.name)} · ${escapeHtml(d.page.name)}</b><div class="muted">Single continuous content editor · Loaded from ${d.source==='live'?'live website':'CMS draft'}</div></div><div><button class="btn" onclick="showCollege('${d.college.id}')">Back</button> <button class="btn primary" onclick="publish()">Publish</button></div></div><div class="toolbar"><button class="tool" onclick="cmd('bold')">B</button><button class="tool" onclick="cmd('italic')">I</button><button class="tool" onclick="cmd('insertUnorderedList')">• List</button><button class="tool" onclick="cmd('createLink')">Link</button><button class="tool" onclick="save()">Save Draft</button></div><div class="canvas"><div id="editor" contenteditable="true">${doc.body.innerHTML}</div></div>`}catch(e){showNotice(e.message)}}
+function selectCollege(id){
+  const pageSelector = $('pageSelector');
+
+  if(!id){
+    pageSelector.innerHTML = '<option value="">Select a page</option>';
+    pageSelector.disabled = true;
+    $('editorArea').innerHTML = `
+      <b>Pages</b>
+      <div class="muted" style="margin-top:8px">
+        Select a college and page to start editing.
+      </div>`;
+    return;
+  }
+
+  const college = data.colleges.find(c => c.id === id);
+
+  pageSelector.disabled = false;
+  pageSelector.innerHTML =
+    '<option value="">Select a page</option>' +
+    (college.pages || []).map(p =>
+      `<option value="${college.id}:${p.id}">
+        ${escapeHtml(p.name)}${p.status === 'live' ? ' — Live' : ' — Draft'}
+      </option>`
+    ).join('');
+
+  $('editorArea').innerHTML = `
+    <b>${escapeHtml(college.name)}</b>
+    <div class="muted" style="margin-top:8px">
+      Select a page to start editing.
+    </div>`;
+}
+
+function selectPage(id){
+  if(!id) return;
+
+  edit(id);
+}
+  function showCollege(id){const c=data.colleges.find(x=>x.id===id);$('workspace').innerHTML=`<b>${escapeHtml(c.name)}</b><div class="muted" style="margin:5px 0 12px">Existing, CMS-created and automatically discovered pages appear together.</div>`+(c.pages.length?c.pages.map(p=>`<div class="page" onclick="edit('${c.id}:${p.id}')"><b>${escapeHtml(p.name)}</b><span class="badge">${escapeHtml(p.status)}</span><div class="muted">${escapeHtml(p.type)}</div></div>`).join(''):'<div class="muted">No pages connected yet.</div>')}
+async function edit(id){current=id;try{const d=await api('/api/page/'+encodeURIComponent(id));const doc=new DOMParser().parseFromString(d.html,'text/html');
+                                       $('editorArea').innerHTML=`<div class="top"><div><b>${escapeHtml(d.college.name)} · ${escapeHtml(d.page.name)}</b><div class="muted">Single continuous content editor · Loaded from ${d.source==='live'?'live website':'CMS draft'}</div></div><div>
+                                       <button class="btn primary" onclick="publish()">Publish</button></div></div><div class="toolbar"><button class="tool" onclick="cmd('bold')">B</button><button class="tool" onclick="cmd('italic')">I</button><button class="tool" onclick="cmd('insertUnorderedList')">• List</button><button class="tool" onclick="cmd('createLink')">Link</button><button class="tool" onclick="save()">Save Draft</button></div><div class="canvas"><div id="editor" contenteditable="true">${doc.body.innerHTML}</div></div>`}catch(e){showNotice(e.message)}}
 function cmd(c){if(c==='createLink'){const u=prompt('URL');if(u)document.execCommand('createLink',false,u)}else document.execCommand(c)}
 async function save(){try{const old=await api('/api/page/'+encodeURIComponent(current)),doc=new DOMParser().parseFromString(old.html,'text/html');doc.body.innerHTML=$('editor').innerHTML;await api('/api/page/'+encodeURIComponent(current),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({html:'<!doctype html>'+doc.documentElement.outerHTML})});alert('Draft saved successfully.');await load()}catch(e){showNotice(e.message)}}
 async function publish(){try{await save();const r=await api('/api/page/'+encodeURIComponent(current)+'/publish',{method:'POST'});alert(r.message||'Published successfully.');await load()}catch(e){showNotice(e.message)}}
