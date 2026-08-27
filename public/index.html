@@ -257,6 +257,32 @@ input,select{
   display:table-cell!important;border:1px solid #dce3ed;padding:9px 10px
 }
 
+
+/* SEO CENTRE */
+.seo-selector-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px
+}
+.seo-form{margin-top:18px;display:grid;gap:15px}
+.seo-field{display:grid;gap:6px}
+.seo-field textarea{
+  width:100%;min-height:104px;padding:11px;border:1px solid var(--line);border-radius:8px;
+  background:#fff;font:inherit;resize:vertical
+}
+.seo-field input:focus,.seo-field textarea:focus,.seo-field select:focus{
+  outline:2px solid rgba(37,99,235,.18);border-color:#8db0ee
+}
+.seo-helper{font-size:11px;color:var(--muted)}
+.seo-count{font-size:11px;color:var(--muted);text-align:right}
+.seo-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.seo-preview{
+  margin-top:20px;border:1px solid var(--line);border-radius:10px;padding:18px;background:#fbfdff
+}
+.seo-preview-label{font-size:11px;font-weight:800;color:#667085;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
+.seo-preview-url{font-size:13px;color:#168c60;margin-bottom:5px;overflow-wrap:anywhere}
+.seo-preview-title{font-size:20px;color:#1a0dab;line-height:1.35;margin-bottom:6px}
+.seo-preview-description{font-size:13px;color:#4b5563;line-height:1.55}
+@media(max-width:700px){.seo-selector-grid{grid-template-columns:1fr}}
+
 .history-row{padding:13px 0;border-bottom:1px solid var(--line)}
 .history-row:last-child{border-bottom:0}
 
@@ -421,10 +447,77 @@ input,select{
 
     <!-- SEO -->
     <section id="seoView" style="display:none">
-      <div class="card panel">
-        <h2>SEO Centre</h2>
-        <div class="muted">SEO tools can be added as a separate module without changing the page editor.</div>
-      </div>
+      <section class="card panel">
+        <h2>Page SEO Manager</h2>
+        <div class="muted">Select a college and page to edit its SEO information independently from the content editor.</div>
+
+        <div class="seo-selector-grid">
+          <div>
+            <label for="seoCollegeSelect">Select College</label>
+            <select id="seoCollegeSelect" onchange="onSeoCollegeChange()">
+              <option value="">Select a college</option>
+            </select>
+          </div>
+          <div>
+            <label for="seoPageSelect">Select Page</label>
+            <select id="seoPageSelect" onchange="onSeoPageChange()" disabled>
+              <option value="">Select a page</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section class="card panel" id="seoEditorPanel" style="display:none">
+        <div style="display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap">
+          <div>
+            <h2 id="seoEditorTitle">Edit SEO</h2>
+            <div class="muted" id="seoEditorSubtitle">Update page-level SEO details and save them as a draft.</div>
+          </div>
+          <span class="category-badge" id="seoPageCategory">Page</span>
+        </div>
+
+        <div class="seo-form">
+          <div class="seo-field">
+            <label for="seoHeaderTitle">Header Title</label>
+            <input id="seoHeaderTitle" placeholder="Enter page H1 / header title" oninput="updateSeoPreview()">
+            <div class="seo-helper">This updates the main H1 heading on the selected page.</div>
+          </div>
+
+          <div class="seo-field">
+            <label for="seoTitle">SEO Title</label>
+            <input id="seoTitle" placeholder="Enter SEO title" oninput="updateSeoPreview()">
+            <div class="seo-count" id="seoTitleCount">0 characters</div>
+          </div>
+
+          <div class="seo-field">
+            <label for="seoDescription">SEO Description</label>
+            <textarea id="seoDescription" placeholder="Enter SEO description" oninput="updateSeoPreview()"></textarea>
+            <div class="seo-count" id="seoDescriptionCount">0 characters</div>
+          </div>
+
+          <div class="seo-field">
+            <label for="seoKeywords">SEO Keywords</label>
+            <input id="seoKeywords" placeholder="e.g. IIM Ahmedabad, MBA, admission, fees" oninput="updateSeoPreview()">
+            <div class="seo-helper">Separate keywords with commas.</div>
+          </div>
+
+          <div class="seo-actions">
+            <button class="btn" id="saveSeoBtn" onclick="saveSeoDraft()">Save SEO Draft</button>
+            <button class="btn primary" id="publishSeoBtn" onclick="publishSeoChanges()">Publish SEO Changes</button>
+          </div>
+        </div>
+
+        <div class="seo-preview">
+          <div class="seo-preview-label">Google Search Preview</div>
+          <div class="seo-preview-url" id="seoPreviewUrl">Select a page to preview its URL.</div>
+          <div class="seo-preview-title" id="seoPreviewTitle">SEO Title</div>
+          <div class="seo-preview-description" id="seoPreviewDescription">SEO description will appear here.</div>
+        </div>
+      </section>
+
+      <section class="card panel" id="seoEmptyState">
+        <div class="empty">Select a college and page to view and edit its SEO information.</div>
+      </section>
     </section>
 
     <!-- HISTORY -->
@@ -565,6 +658,8 @@ let editorMode = "edit";
 let originalBodyHTML = "";
 let selectedTableCell = null;
 let authenticatedUser = null;
+let seoCollegeId = "";
+let seoPageId = "";
 
 function $(id) {
   return document.getElementById(id);
@@ -806,6 +901,18 @@ async function load() {
             `<option value="${escapeHtml(college.id)}">${escapeHtml(college.name)}</option>`
           ).join("")
         : `<option value="">No colleges available</option>`;
+
+    $("seoCollegeSelect").innerHTML =
+      `<option value="">Select a college</option>` +
+      colleges.map((college) =>
+        `<option value="${escapeHtml(college.id)}">${escapeHtml(college.name)}</option>`
+      ).join("");
+
+    if (seoCollegeId && colleges.some((college) => college.id === seoCollegeId)) {
+      $("seoCollegeSelect").value = seoCollegeId;
+      populateSeoPages();
+      if (seoPageId) $("seoPageSelect").value = seoPageId;
+    }
 
     renderAllPages();
 
@@ -1550,7 +1657,7 @@ async function showView(view) {
     dashboard: ["Editorial Dashboard", "One workspace for existing and future college pages."],
     pages: ["All Content Pages", "Browse college, course, exam and placement pages and open any page in the Structure Mirror editor."],
     templates: ["Templates", "Available page templates used when creating new CMS pages."],
-    seo: ["SEO Centre", "SEO information and future audit tools for your pages."],
+    seo: ["SEO Centre", "Manage Header Title, SEO Title, Description and Keywords for each individual page."],
     history: ["Publish History", "Recently published CMS pages."]
   };
 
