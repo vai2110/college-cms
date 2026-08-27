@@ -83,6 +83,8 @@ input,select{
 .badge{
   float:right;font-size:11px;padding:4px 7px;border-radius:20px;background:#eaf8f1;color:var(--success)
 }
+.category-badge{display:inline-block;margin-top:8px;font-size:11px;font-weight:700;padding:4px 8px;border-radius:20px;background:#eef3ff;color:var(--nav2)}
+.category-badge::before{content:"Category: ";font-weight:400;color:var(--muted)}
 .empty{
   padding:22px;border:1px dashed var(--line);border-radius:9px;color:var(--muted);text-align:center
 }
@@ -258,6 +260,27 @@ input,select{
 .history-row{padding:13px 0;border-bottom:1px solid var(--line)}
 .history-row:last-child{border-bottom:0}
 
+/* LOGIN SCREEN */
+#loginView{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  padding:24px;background:linear-gradient(135deg,#eef4ff 0%,#f6f8fc 55%,#e9f0fb 100%);
+}
+.login-card{
+  width:min(430px,100%);background:#fff;border:1px solid var(--line);
+  border-radius:16px;padding:32px;box-shadow:0 18px 45px rgba(16,42,86,.12)
+}
+.login-brand{font-size:26px;font-weight:800;color:var(--nav);margin-bottom:8px}
+.login-brand span{color:var(--blue)}
+.login-card h1{font-size:24px;margin:22px 0 6px}
+.login-error{
+  display:none;margin-top:14px;padding:10px 12px;border-radius:8px;
+  background:#fff4f1;border:1px solid #f1c5ba;color:var(--danger);font-size:13px
+}
+.login-error.show{display:block}
+.login-card .btn{width:100%;margin-top:18px}
+.login-card input{margin-bottom:14px}
+.app{display:none}
+
 @media(max-width:1000px){
   .compare-layout{grid-template-columns:1fr}
   .compare-scroll{height:60vh}
@@ -280,7 +303,30 @@ input,select{
 </head>
 
 <body>
-<div class="app">
+
+<!-- LOGIN VIEW -->
+<section id="loginView">
+  <div class="login-card">
+    <div class="login-brand">College<span>CMS</span></div>
+    <div class="muted">Secure editorial workspace</div>
+
+    <h1>Sign in</h1>
+    <div class="muted">Use the CMS username and password configured on your server.</div>
+
+    <form id="loginForm" onsubmit="signIn(event)">
+      <label for="loginUsername" style="margin-top:22px">Username</label>
+      <input id="loginUsername" name="username" autocomplete="username" required placeholder="Enter username">
+
+      <label for="loginPassword">Password</label>
+      <input id="loginPassword" name="password" type="password" autocomplete="current-password" required placeholder="Enter password">
+
+      <div id="loginError" class="login-error"></div>
+      <button id="loginBtn" class="btn primary" type="submit">Sign in to CMS</button>
+    </form>
+  </div>
+</section>
+
+<div class="app" id="app">
   <aside class="side">
     <div class="brand">College<span>CMS</span></div>
     <button class="nav active" data-view="dashboard" onclick="showView('dashboard')">Dashboard</button>
@@ -354,7 +400,7 @@ input,select{
     <section id="pagesView" style="display:none">
       <div class="card panel">
         <h2>All Content Pages</h2>
-        <div class="muted">College, course, exam and placement pages, grouped by content category.</div>
+        <div class="muted">College, course, exam and placement pages in one organised list.</div>
         <div id="allPagesList" class="page-list"></div>
       </div>
     </section>
@@ -518,6 +564,7 @@ let currentView = "dashboard";
 let editorMode = "edit";
 let originalBodyHTML = "";
 let selectedTableCell = null;
+let authenticatedUser = null;
 
 function $(id) {
   return document.getElementById(id);
@@ -545,11 +592,20 @@ function showNotice(message, type = "error") {
 }
 
 async function api(url, options = {}) {
-  const response = await fetch(url, options);
+  const response = await fetch(url, {
+    credentials: "same-origin",
+    ...options
+  });
+
   const contentType = response.headers.get("content-type") || "";
   const body = contentType.includes("application/json")
     ? await response.json()
     : { error: await response.text() };
+
+  if (response.status === 401) {
+    showLogin();
+    throw new Error(body.error || "Your session has expired. Please sign in again.");
+  }
 
   if (!response.ok) {
     throw new Error(body.error || body.message || "Something went wrong");
@@ -559,8 +615,109 @@ async function api(url, options = {}) {
 }
 
 /* ==============================
+   AUTHENTICATION
+================================ */
+function showLogin(message = "") {
+  $("app").style.display = "none";
+  $("loginView").style.display = "flex";
+
+  if (message) {
+    $("loginError").textContent = message;
+    $("loginError").classList.add("show");
+  } else {
+    $("loginError").classList.remove("show");
+  }
+}
+
+function showApp() {
+  $("loginView").style.display = "none";
+  $("app").style.display = "flex";
+}
+
+async function checkSession() {
+  try {
+    const response = await fetch("/api/me", { credentials: "same-origin" });
+    const result = await response.json();
+
+    if (result.authenticated) {
+      authenticatedUser = result.user;
+      showApp();
+      await load();
+      return;
+    }
+
+    showLogin();
+  } catch (error) {
+    showLogin("Unable to connect to the CMS server. Please refresh and try again.");
+  }
+}
+
+async function signIn(event) {
+  event.preventDefault();
+
+  const username = $("loginUsername").value.trim();
+  const password = $("loginPassword").value;
+  const button = $("loginBtn");
+
+  $("loginError").classList.remove("show");
+
+  if (!username || !password) {
+    $("loginError").textContent = "Please enter both username and password.";
+    $("loginError").classList.add("show");
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = "Signing in...";
+
+  try {
+    const response = await fetch("/api/login", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || "Unable to sign in.");
+    }
+
+    authenticatedUser = result.user || { username };
+    $("loginPassword").value = "";
+    showApp();
+    await load();
+  } catch (error) {
+    $("loginError").textContent = error.message || "Unable to sign in.";
+    $("loginError").classList.add("show");
+  } finally {
+    button.disabled = false;
+    button.textContent = "Sign in to CMS";
+  }
+}
+
+/* ==============================
    DATA / DASHBOARD
 ================================ */
+/* ==============================
+   CONTENT CATEGORIES
+   Uses an explicit category when the API provides one. Existing pages created
+   before categories were introduced are classified from their name/type.
+================================= */
+function getPageCategory(page = {}) {
+  const explicit = String(page.category || "").toLowerCase();
+  if (["college", "course", "exam", "placement"].includes(explicit)) return explicit;
+  const text = `${page.name || ""} ${page.type || ""} ${page.slug || ""}`.toLowerCase();
+  if (/placement|salary|recruiter|recruitment/.test(text)) return "placement";
+  if (/\b(cat|xat|snap|cmat|mat|gmat|gre|gate|jee|neet|cuet|nmat|iift|tissnet)\b/.test(text)) return "exam";
+  if (/\b(mba|pgp|pgpx|pgdm|fabm|pgdba|programme|program|course)\b|business analytics|executive mba/.test(text)) return "course";
+  return "college";
+}
+function getCategoryLabel(category) {
+  return ({college:"College",course:"Course",exam:"Exam",placement:"Placement"})[category] || "College";
+}
+
 async function load() {
   try {
     data = await api("/api/colleges");
@@ -568,20 +725,8 @@ async function load() {
     const colleges = data.colleges || [];
     const pages = colleges.flatMap((college) => college.pages || []);
 
-    const categoryCounts = {
-      college: 0,
-      course: 0,
-      exam: 0,
-      placement: 0
-    };
-
-    pages.forEach((page) => {
-      const category = page.category || "college";
-      if (Object.prototype.hasOwnProperty.call(categoryCounts, category)) {
-        categoryCounts[category] += 1;
-      }
-    });
-
+    const categoryCounts = { college: 0, course: 0, exam: 0, placement: 0 };
+    pages.forEach((page) => { categoryCounts[getPageCategory(page)] += 1; });
     $("collegePageCount").textContent = categoryCounts.college;
     $("coursePageCount").textContent = categoryCounts.course;
     $("examPageCount").textContent = categoryCounts.exam;
@@ -614,7 +759,9 @@ async function load() {
       }
     }
   } catch (error) {
-    showNotice(error.message || "Unable to load CMS data.");
+    if ($("app").style.display !== "none") {
+      showNotice(error.message || "Unable to load CMS data.");
+    }
   }
 }
 
@@ -628,8 +775,8 @@ function renderAllPages() {
         <div class="page" onclick="edit('${college.id}:${page.id}')">
           <span class="badge">${escapeHtml(page.status)}</span>
           <b>${escapeHtml(college.name)} · ${escapeHtml(page.name)}</b>
-          <div class="category-badge">${escapeHtml(page.category || "college")}</div>
-           <div class="muted">Template: ${escapeHtml(page.type || "custom")}</div>
+          <div class="category-badge">${escapeHtml(getCategoryLabel(getPageCategory(page)))}</div>
+          <div class="muted">Template: ${escapeHtml(page.type || "custom")}</div>
         </div>
       `).join("")
     : `<div class="empty">No pages available yet. Create your first page.</div>`;
@@ -666,8 +813,8 @@ function onCollegeChange() {
         <div class="page" onclick="edit('${college.id}:${page.id}')">
           <span class="badge">${escapeHtml(page.status)}</span>
           <b>${escapeHtml(page.name)}</b>
-          <div class="category-badge">${escapeHtml(page.category || "college")}</div>
-           <div class="muted">Template: ${escapeHtml(page.type || "custom")}</div>
+          <div class="category-badge">${escapeHtml(getCategoryLabel(getPageCategory(page)))}</div>
+          <div class="muted">Template: ${escapeHtml(page.type || "custom")}</div>
         </div>
       `).join("")
     : `<div class="empty">No pages exist for this college yet. Use “Create Page” to add one.</div>`;
@@ -1242,7 +1389,7 @@ async function syncPages() {
     const result = await api("/api/sync/discover", { method: "POST" });
     await load();
 
-    const addedPages = (result.added || []).length;
+    const addedPages = (result.added || []).filter((item) => item.type === "page").length;
 
     showNotice(
       `Sync complete: ${result.scanned} HTML files scanned and ${addedPages} new CMS pages added.`,
@@ -1338,11 +1485,23 @@ async function signOut() {
   if (!confirm("Do you want to sign out?")) return;
 
   try {
-    await api("/api/logout", { method: "POST" });
-    window.location.reload();
+    await fetch("/api/logout", {
+      method: "POST",
+      credentials: "same-origin"
+    });
   } catch (error) {
-    showNotice(error.message || "Unable to sign out.");
+    // Even if the network response fails, return to the login screen.
   }
+
+  authenticatedUser = null;
+  current = null;
+  currentCollegeId = "";
+  currentPageId = "";
+  data = null;
+
+  $("loginUsername").value = "";
+  $("loginPassword").value = "";
+  showLogin();
 }
 
 /* Modal background click */
@@ -1352,7 +1511,7 @@ document.querySelectorAll(".modal").forEach((modal) => {
   });
 });
 
-load();
+checkSession();
 </script>
 </body>
 </html>
