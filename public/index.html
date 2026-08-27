@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CollegeCMS</title>
+<title>CollegeCMS – Structured Visual Editor</title>
 
 <style>
 :root{
@@ -18,14 +18,19 @@
   --muted:#687386;
   --success:#168c60;
   --danger:#b5472f;
+  --editor-bg:#ffffff;
 }
 *{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text)}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
 button,input,select{font:inherit}
+code{background:#f1f5f9;padding:2px 5px;border-radius:4px}
 .app{display:flex;min-height:100vh}
+
+/* SIDEBAR */
 .side{
   width:240px;background:var(--nav);color:#fff;padding:22px 14px;
-  position:sticky;top:0;height:100vh
+  position:sticky;top:0;height:100vh;overflow:auto
 }
 .brand{font-size:24px;font-weight:800;padding:5px 12px 30px}
 .brand span{color:#8ab8ff}
@@ -35,12 +40,14 @@ button,input,select{font:inherit}
 }
 .nav:hover{background:#17386f}
 .nav.active{background:var(--nav2);color:#fff}
+
+/* MAIN */
 main{flex:1;padding:28px 36px;min-width:0}
 .top{display:flex;justify-content:space-between;gap:15px;align-items:flex-start}
 .top-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 h1{margin:0;font-size:28px}
 h2{margin:0 0 6px;font-size:20px}
-.muted{color:var(--muted);font-size:13px;line-height:1.45}
+.muted{color:var(--muted);font-size:13px;line-height:1.5}
 .btn{
   padding:10px 14px;border:1px solid var(--line);background:#fff;border-radius:8px;
   font-weight:700;cursor:pointer;color:var(--text)
@@ -76,26 +83,154 @@ input,select{
 .badge{
   float:right;font-size:11px;padding:4px 7px;border-radius:20px;background:#eaf8f1;color:var(--success)
 }
-.editor-head{display:flex;justify-content:space-between;gap:15px;align-items:flex-start}
-.toolbar{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0}
-.tool{
-  padding:7px 10px;border:1px solid var(--line);background:#fff;border-radius:6px;cursor:pointer
-}
-.canvas{
-  border:1px solid var(--line);border-radius:10px;background:#fff;min-height:560px;overflow:auto
-}
-.canvas [contenteditable]{min-height:560px;outline:none;padding:18px}
-.modal{
-  position:fixed;inset:0;background:#0007;display:none;place-items:center;padding:20px;z-index:20
-}
-.dialog{background:#fff;padding:22px;border-radius:12px;width:min(500px,92vw)}
-.dialog-actions{margin-top:18px;display:flex;gap:8px;justify-content:flex-end}
 .empty{
   padding:22px;border:1px dashed var(--line);border-radius:9px;color:var(--muted);text-align:center
 }
+
+/* MODALS */
+.modal{
+  position:fixed;inset:0;background:#0007;display:none;place-items:center;padding:20px;z-index:50
+}
+.dialog{background:#fff;padding:22px;border-radius:12px;width:min(500px,92vw)}
+.dialog-actions{margin-top:18px;display:flex;gap:8px;justify-content:flex-end}
+
+/* ==============================
+   STRUCTURED VISUAL EDITOR
+================================ */
+#editorView{display:none}
+.editor-page{margin-top:20px}
+.editor-header{
+  background:#fff;border:1px solid var(--line);border-radius:12px;padding:17px;
+  display:flex;justify-content:space-between;align-items:flex-start;gap:16px
+}
+.editor-header-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.editor-title{font-size:20px;font-weight:800}
+.editor-toolbar{
+  margin:14px 0;background:#fff;border:1px solid var(--line);border-radius:10px;
+  padding:9px;display:flex;gap:7px;align-items:center;flex-wrap:wrap
+}
+.tool{
+  padding:7px 10px;border:1px solid var(--line);background:#fff;border-radius:6px;cursor:pointer
+}
+.tool:hover{background:#f8fafc}
+.toolbar-divider{height:26px;width:1px;background:var(--line);margin:0 2px}
+.mode-group{margin-left:auto;display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.mode-btn{border:0;background:#fff;padding:8px 11px;font-weight:700;cursor:pointer;font-size:12px}
+.mode-btn.active{background:#eaf1ff;color:var(--blue)}
+.editor-stage{
+  background:#e9eef5;border:1px solid var(--line);border-radius:12px;padding:18px;
+  min-height:650px
+}
+.editor-canvas{
+  width:min(1100px,100%);margin:0 auto;background:var(--editor-bg);border-radius:8px;
+  box-shadow:0 8px 28px rgba(20,35,60,.08);min-height:600px;padding:28px
+}
+
+/* Structure mirror wrappers are CMS-only and never saved */
+.cms-section{
+  position:relative;margin:0 0 18px;padding:30px 16px 16px;
+  border:1px dashed transparent;border-radius:10px;transition:.15s
+}
+.cms-section:hover{border-color:#9db7e9;background:#fbfdff}
+.cms-section-label{
+  position:absolute;left:12px;top:8px;font-size:10px;font-weight:800;
+  letter-spacing:.05em;color:#53719f;text-transform:uppercase;
+  display:flex;gap:7px;align-items:center
+}
+.cms-section-label span{
+  background:#eef4ff;border:1px solid #d8e5fb;padding:3px 6px;border-radius:12px;
+  font-size:9px
+}
+.cms-section-edit{
+  position:absolute;right:10px;top:8px;padding:5px 8px;border:1px solid var(--line);
+  border-radius:6px;background:#fff;font-size:11px;font-weight:700;cursor:pointer;display:none
+}
+.cms-section:hover .cms-section-edit{display:block}
+
+/* Frontend structure is preserved inside this mirror */
+#visualEditor{line-height:1.6;overflow-wrap:anywhere}
+#visualEditor section{margin-bottom:20px}
+#visualEditor h1,#visualEditor h2,#visualEditor h3,#visualEditor h4,
+#visualEditor h5,#visualEditor h6{line-height:1.25}
+#visualEditor p{line-height:1.65}
+#visualEditor img{max-width:100%;height:auto}
+#visualEditor a{color:#2563eb}
+
+/* Tables remain actual tables */
+#visualEditor table{width:100%;border-collapse:collapse;margin:14px 0}
+#visualEditor th,#visualEditor td{
+  border:1px solid #dce3ed;padding:9px 10px;vertical-align:top
+}
+#visualEditor th{background:#f5f8fc;text-align:left}
+#visualEditor .table-wrapper,
+#visualEditor .programme-fee-table{overflow-x:auto;margin:14px 0}
+
+/* Generic visual treatment for common frontend content boxes.
+   Original classes and HTML remain untouched. */
+#visualEditor .notice,
+#visualEditor .reality-box,
+#visualEditor .important-box,
+#visualEditor .info-box,
+#visualEditor .admission-update{
+  border:1px solid #d7e3f5;border-left:4px solid #2563eb;
+  border-radius:8px;padding:14px 16px;margin:16px 0;background:#f8fbff
+}
+#visualEditor .pro-box,
+#visualEditor .warning-box,
+#visualEditor .highlight-card,
+#visualEditor .programme-nav-card,
+#visualEditor .programme-card-details{
+  border:1px solid #dce3ed;border-radius:9px;padding:14px;margin:12px 0;background:#fff
+}
+#visualEditor .programme-nav-grid,
+#visualEditor .highlight-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:14px 0
+}
+#visualEditor .faq-item{border:1px solid #dce3ed;border-radius:8px;padding:13px;margin:10px 0}
+
+/* Editable elements */
+.cms-editable{position:relative}
+.cms-editable:hover{
+  outline:2px solid rgba(37,99,235,.28);
+  outline-offset:3px;border-radius:4px;cursor:text
+}
+.cms-editable[contenteditable="true"]:focus{
+  outline:2px solid var(--blue);outline-offset:3px;background:#fffef5
+}
+.cms-table-cell:hover{background:#f8fbff}
+.cms-table-cell[contenteditable="true"]:focus{background:#fffef5}
+.cms-locked{pointer-events:none}
+
+/* Preview mode removes editorial markings */
+.preview-mode .cms-section{padding:0;margin-bottom:0;border:0;background:transparent}
+.preview-mode .cms-section-label,
+.preview-mode .cms-section-edit{display:none!important}
+.preview-mode .cms-editable{outline:0!important;cursor:default}
+.preview-mode .editor-canvas{padding:0;box-shadow:none;width:100%;background:#fff}
+.preview-mode .editor-stage{padding:0;background:#fff;border:0}
+
+/* Compare mode */
+.compare-layout{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.compare-pane{
+  min-width:0;border:1px solid var(--line);border-radius:10px;background:#fff;overflow:hidden
+}
+.compare-pane-title{
+  padding:10px 14px;border-bottom:1px solid var(--line);font-size:12px;font-weight:800;
+  color:#4a5b72;background:#f8fafc
+}
+.compare-scroll{height:72vh;overflow:auto;padding:16px}
+.compare-scroll .editor-canvas{box-shadow:none;padding:0;width:100%}
+.compare-scroll .cms-section{padding:0;margin:0;border:0;background:transparent}
+.compare-scroll .cms-section-label,.compare-scroll .cms-section-edit{display:none!important}
+.compare-scroll .cms-editable{outline:0!important;cursor:default}
+
 .history-row{padding:13px 0;border-bottom:1px solid var(--line)}
 .history-row:last-child{border-bottom:0}
 
+@media(max-width:1000px){
+  .compare-layout{grid-template-columns:1fr}
+  .compare-scroll{height:60vh}
+}
 @media(max-width:900px){
   .side{display:none}
   main{padding:20px}
@@ -103,9 +238,12 @@ input,select{
   .selector-grid{grid-template-columns:1fr}
 }
 @media(max-width:600px){
-  .top{flex-direction:column}
-  .top-actions{justify-content:flex-start}
+  .top,.editor-header{flex-direction:column}
+  .top-actions,.editor-header-actions{justify-content:flex-start}
   .stats{grid-template-columns:1fr}
+  .editor-stage{padding:8px}
+  .editor-canvas{padding:15px}
+  .mode-group{margin-left:0}
 }
 </style>
 </head>
@@ -122,7 +260,7 @@ input,select{
   </aside>
 
   <main>
-    <div class="top">
+    <div class="top" id="mainTop">
       <div>
         <h1 id="viewTitle">Editorial Dashboard</h1>
         <div class="muted" id="viewSubtitle">One workspace for existing and future college pages.</div>
@@ -138,6 +276,7 @@ input,select{
 
     <div class="notice" id="notice"></div>
 
+    <!-- DASHBOARD -->
     <section id="dashboardView">
       <div class="stats">
         <div class="card"><div class="muted">Colleges</div><div id="collegeCount" class="num">—</div></div>
@@ -148,7 +287,7 @@ input,select{
 
       <section class="card panel">
         <h2>Pages</h2>
-        <div class="muted">Select a college and then select a page to start editing.</div>
+        <div class="muted">Select a college and then select a page to open it in the Structure Mirror editor.</div>
 
         <div class="selector-grid" style="margin-top:18px">
           <div>
@@ -165,7 +304,7 @@ input,select{
             </select>
           </div>
 
-          <button class="btn primary" id="editSelectedBtn" onclick="editSelectedPage()" disabled>Edit Page</button>
+          <button class="btn primary" id="editSelectedBtn" onclick="editSelectedPage()" disabled>Open Editor</button>
         </div>
       </section>
 
@@ -178,34 +317,38 @@ input,select{
       </section>
     </section>
 
+    <!-- PAGES -->
     <section id="pagesView" style="display:none">
       <div class="card panel">
         <h2>College Pages</h2>
-        <div class="muted">Choose a college from the dashboard to view and edit its connected pages.</div>
+        <div class="muted">All existing, CMS-created and discovered pages.</div>
         <div id="allPagesList" class="page-list"></div>
       </div>
     </section>
 
+    <!-- TEMPLATES -->
     <section id="templatesView" style="display:none">
       <div class="card panel">
         <h2>Templates</h2>
-        <div class="muted">New pages use the templates stored in your <code>templates</code> folder.</div>
+        <div class="muted">New pages use templates from your <code>templates</code> folder.</div>
         <div class="page-list">
-          <div class="page"><b>Overview</b><div class="muted">Used for overview pages.</div></div>
-          <div class="page"><b>Admission</b><div class="muted">Used for admission pages.</div></div>
-          <div class="page"><b>Courses & Fees</b><div class="muted">Used for courses and fees pages.</div></div>
-          <div class="page"><b>Placement</b><div class="muted">Used for placement pages.</div></div>
+          <div class="page"><b>Overview</b><div class="muted">Overview page structure.</div></div>
+          <div class="page"><b>Admission</b><div class="muted">Admission page structure.</div></div>
+          <div class="page"><b>Courses & Fees</b><div class="muted">Courses and fees page structure.</div></div>
+          <div class="page"><b>Placement</b><div class="muted">Placement page structure.</div></div>
         </div>
       </div>
     </section>
 
+    <!-- SEO -->
     <section id="seoView" style="display:none">
       <div class="card panel">
         <h2>SEO Centre</h2>
-        <div class="muted">This CMS starter stores SEO-ready page HTML. A dedicated SEO audit module can be added later.</div>
+        <div class="muted">SEO tools can be added as a separate module without changing the page editor.</div>
       </div>
     </section>
 
+    <!-- HISTORY -->
     <section id="historyView" style="display:none">
       <div class="card panel">
         <h2>Publish History</h2>
@@ -214,35 +357,74 @@ input,select{
       </div>
     </section>
 
-    <section id="editorView" style="display:none">
-      <div class="card panel">
-        <div class="editor-head">
+    <!-- STRUCTURED VISUAL EDITOR -->
+    <section id="editorView">
+      <div class="editor-page">
+        <div class="editor-header">
           <div>
-            <h2 id="editorTitle">Page Editor</h2>
-            <div class="muted">Single continuous content editor</div>
+            <div class="editor-title" id="editorTitle">Structured Visual Editor</div>
+            <div class="muted" id="editorSubtitle">
+              Structure Mirror: the frontend layout is preserved while content remains editable.
+            </div>
           </div>
-          <div>
-            <button class="btn" onclick="backToPages()">Back</button>
+
+          <div class="editor-header-actions">
+            <button class="btn" onclick="backToPages()">← Back</button>
+            <button class="btn" onclick="save()">Save Draft</button>
             <button class="btn primary" onclick="publish()">Publish</button>
           </div>
         </div>
 
-        <div class="toolbar">
+        <div class="editor-toolbar">
           <button class="tool" onclick="cmd('bold')"><b>B</b></button>
           <button class="tool" onclick="cmd('italic')"><i>I</i></button>
           <button class="tool" onclick="cmd('insertUnorderedList')">• List</button>
+          <button class="tool" onclick="cmd('insertOrderedList')">1. List</button>
           <button class="tool" onclick="cmd('createLink')">Link</button>
-          <button class="tool" onclick="save()">Save Draft</button>
+          <span class="toolbar-divider"></span>
+          <button class="tool" onclick="addTableRow()">+ Table Row</button>
+          <button class="tool" onclick="deleteTableRow()">− Table Row</button>
+
+          <div class="mode-group">
+            <button class="mode-btn active" id="editModeBtn" onclick="setEditorMode('edit')">Edit</button>
+            <button class="mode-btn" id="previewModeBtn" onclick="setEditorMode('preview')">Preview</button>
+            <button class="mode-btn" id="compareModeBtn" onclick="setEditorMode('compare')">Compare</button>
+          </div>
         </div>
 
-        <div class="canvas">
-          <div id="editor" contenteditable="true"></div>
+        <!-- EDIT / PREVIEW STAGE -->
+        <div class="editor-stage" id="editorStage">
+          <div class="editor-canvas" id="editorCanvas">
+            <div id="visualEditor"></div>
+          </div>
+        </div>
+
+        <!-- COMPARE STAGE -->
+        <div class="compare-layout" id="compareStage" style="display:none">
+          <div class="compare-pane">
+            <div class="compare-pane-title">CMS EDITOR — Current Draft</div>
+            <div class="compare-scroll">
+              <div class="editor-canvas">
+                <div id="compareEditor"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="compare-pane">
+            <div class="compare-pane-title">FRONTEND STRUCTURE — Original Version</div>
+            <div class="compare-scroll">
+              <div class="editor-canvas">
+                <div id="compareOriginal"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
   </main>
 </div>
 
+<!-- ADD COLLEGE MODAL -->
 <div class="modal" id="collegeModal">
   <div class="dialog">
     <h2>Add New College</h2>
@@ -259,6 +441,7 @@ input,select{
   </div>
 </div>
 
+<!-- CREATE PAGE MODAL -->
 <div class="modal" id="pageModal">
   <div class="dialog">
     <h2>Create New Page</h2>
@@ -291,6 +474,9 @@ let current = null;
 let currentCollegeId = "";
 let currentPageId = "";
 let currentView = "dashboard";
+let editorMode = "edit";
+let originalBodyHTML = "";
+let selectedTableCell = null;
 
 function $(id) {
   return document.getElementById(id);
@@ -331,6 +517,9 @@ async function api(url, options = {}) {
   return body;
 }
 
+/* ==============================
+   DATA / DASHBOARD
+================================ */
 async function load() {
   try {
     data = await api("/api/colleges");
@@ -361,6 +550,7 @@ async function load() {
     if (currentCollegeId && colleges.some((college) => college.id === currentCollegeId)) {
       $("collegeSelect").value = currentCollegeId;
       onCollegeChange();
+
       if (currentPageId) {
         $("pageSelect").value = currentPageId;
         onPageChange();
@@ -434,51 +624,364 @@ function editSelectedPage() {
   edit(`${currentCollegeId}:${currentPageId}`);
 }
 
+/* ==============================
+   STRUCTURE MIRROR EDITOR
+================================ */
+
+/*
+  These selectors identify meaningful frontend blocks. The original HTML is
+  preserved; CMS wrappers are added only inside the editor and removed on save.
+*/
+const BLOCK_SELECTORS = [
+  "section",
+  "table",
+  ".table-wrapper",
+  ".programme-fee-table",
+  ".notice",
+  ".reality-box",
+  ".important-box",
+  ".info-box",
+  ".admission-update",
+  ".highlight-grid",
+  ".programme-nav-grid",
+  ".faq-item",
+  ".pro-box",
+  ".warning-box"
+].join(",");
+
+const EDITABLE_TEXT_SELECTOR = [
+  "h1","h2","h3","h4","h5","h6",
+  "p","li","blockquote",
+  "td","th","figcaption"
+].join(",");
+
 async function edit(id) {
   try {
     const result = await api("/api/page/" + encodeURIComponent(id));
+
     current = id;
     currentCollegeId = result.college.id;
     currentPageId = result.page.id;
 
     const doc = new DOMParser().parseFromString(result.html, "text/html");
-    $("editor").innerHTML = doc.body.innerHTML;
-    $("editorTitle").textContent = `${result.college.name} · ${result.page.name}`;
 
+    // Keep an untouched copy for comparison mode.
+    originalBodyHTML = doc.body.innerHTML;
+
+    $("editorTitle").textContent = `${result.college.name} · ${result.page.name}`;
+    $("editorSubtitle").textContent =
+      "Structure Mirror: frontend sections, tables, cards and content boxes remain visually recognisable.";
+
+    renderStructuredEditor(doc.body.innerHTML);
     showEditor(true);
+    setEditorMode("edit");
   } catch (error) {
     showNotice(error.message || "Unable to open this page.");
   }
 }
 
-function showEditor(show) {
-  $("editorView").style.display = show ? "block" : "none";
-  $("dashboardView").style.display = show ? "none" : currentView === "dashboard" ? "block" : "none";
-  $("pagesView").style.display = show ? "none" : currentView === "pages" ? "block" : "none";
-  $("templatesView").style.display = show ? "none" : currentView === "templates" ? "block" : "none";
-  $("seoView").style.display = show ? "none" : currentView === "seo" ? "block" : "none";
-  $("historyView").style.display = show ? "none" : currentView === "history" ? "block" : "none";
+function renderStructuredEditor(html) {
+  const container = document.createElement("div");
+  container.innerHTML = html;
+
+  // Add CMS wrappers to top-level content and meaningful frontend blocks.
+  const topNodes = Array.from(container.childNodes);
+
+  topNodes.forEach((node) => {
+    if (node.nodeType === Node.TEXT_NODE && !node.textContent.trim()) return;
+
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      decorateEditableElements(node);
+
+      if (shouldWrapAsSection(node)) {
+        wrapAsCmsSection(node);
+      } else {
+        // If a top-level node is not one of the recognised block types,
+        // it still gets a safe editorial wrapper for easier comparison.
+        wrapAsCmsSection(node, "Content block");
+      }
+    }
+  });
+
+  $("visualEditor").innerHTML = container.innerHTML;
+
+  // Make headings/paragraphs/table cells editable after the DOM is rendered.
+  prepareEditorInteractions($("visualEditor"));
+  updateCompareViews();
 }
 
-function backToPages() {
-  current = null;
-  showView("dashboard");
-  $("collegeSelect").value = currentCollegeId;
-  onCollegeChange();
-  $("pageSelect").value = currentPageId;
-  onPageChange();
+function shouldWrapAsSection(element) {
+  if (element.matches("section, table")) return true;
+
+  return [
+    "table-wrapper",
+    "programme-fee-table",
+    "notice",
+    "reality-box",
+    "important-box",
+    "info-box",
+    "admission-update",
+    "highlight-grid",
+    "programme-nav-grid",
+    "faq-item",
+    "pro-box",
+    "warning-box"
+  ].some((className) => element.classList.contains(className));
 }
 
-function cmd(command) {
-  $("editor").focus();
+function getBlockLabel(element, fallback = "Section") {
+  if (element.matches("section")) {
+    const heading = element.querySelector("h1,h2,h3");
+    return heading ? heading.textContent.trim().slice(0, 70) : "Section";
+  }
 
-  if (command === "createLink") {
-    const url = prompt("Enter the URL");
-    if (url) document.execCommand("createLink", false, url);
+  if (element.matches("table") || element.querySelector("table")) return "Table";
+  if (element.classList.contains("notice")) return "Notice / Update";
+  if (element.classList.contains("reality-box")) return "Reality Check";
+  if (element.classList.contains("faq-item")) return "FAQ";
+  if (element.classList.contains("programme-nav-grid")) return "Programme Cards";
+  if (element.classList.contains("highlight-grid")) return "Highlights";
+  if (element.classList.contains("pro-box")) return "Key Advantage";
+  if (element.classList.contains("warning-box")) return "Important Warning";
+
+  return fallback;
+}
+
+function wrapAsCmsSection(element, fallbackLabel = "Section") {
+  // Avoid double-wrapping elements that are already wrapped.
+  if (element.parentElement?.classList?.contains("cms-section")) return;
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "cms-section";
+  wrapper.setAttribute("data-cms-wrapper", "true");
+
+  const label = document.createElement("div");
+  label.className = "cms-section-label";
+  label.setAttribute("contenteditable", "false");
+  label.innerHTML = `${escapeHtml(getBlockLabel(element, fallbackLabel))}<span>STRUCTURE</span>`;
+
+  const editButton = document.createElement("button");
+  editButton.type = "button";
+  editButton.className = "cms-section-edit";
+  editButton.textContent = "Edit section";
+  editButton.setAttribute("contenteditable", "false");
+
+  editButton.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    enableSectionEditing(wrapper);
+  });
+
+  element.parentNode.insertBefore(wrapper, element);
+  wrapper.appendChild(label);
+  wrapper.appendChild(editButton);
+  wrapper.appendChild(element);
+}
+
+function decorateEditableElements(root) {
+  const elements = [];
+
+  if (root.matches && root.matches(EDITABLE_TEXT_SELECTOR)) elements.push(root);
+  root.querySelectorAll?.(EDITABLE_TEXT_SELECTOR).forEach((element) => elements.push(element));
+
+  elements.forEach((element) => {
+    element.classList.add("cms-editable");
+
+    if (element.matches("td,th")) {
+      element.classList.add("cms-table-cell");
+    }
+
+    element.setAttribute("contenteditable", "true");
+
+    element.addEventListener("focus", () => {
+      if (element.matches("td,th")) selectedTableCell = element;
+    });
+
+    element.addEventListener("input", () => {
+      if (editorMode === "compare") updateCompareViews();
+    });
+  });
+}
+
+function prepareEditorInteractions(root) {
+  root.querySelectorAll("a").forEach((link) => {
+    link.addEventListener("click", (event) => {
+      if (editorMode === "edit") event.preventDefault();
+    });
+  });
+
+  root.addEventListener("click", (event) => {
+    const cell = event.target.closest("td,th");
+    if (cell) selectedTableCell = cell;
+  });
+}
+
+function enableSectionEditing(section) {
+  section.querySelectorAll(".cms-editable").forEach((element) => {
+    element.setAttribute("contenteditable", "true");
+  });
+
+  section.scrollIntoView({ behavior: "smooth", block: "center" });
+  showNotice("Section is ready for editing.", "success");
+}
+
+/* ==============================
+   EDITOR MODES
+================================ */
+function setEditorMode(mode) {
+  editorMode = mode;
+
+  $("editModeBtn").classList.toggle("active", mode === "edit");
+  $("previewModeBtn").classList.toggle("active", mode === "preview");
+  $("compareModeBtn").classList.toggle("active", mode === "compare");
+
+  $("editorStage").style.display = mode === "compare" ? "none" : "block";
+  $("compareStage").style.display = mode === "compare" ? "grid" : "none";
+
+  const editorView = $("visualEditor");
+  const stage = $("editorStage");
+
+  stage.classList.toggle("preview-mode", mode === "preview");
+
+  if (mode === "preview") {
+    editorView.querySelectorAll(".cms-editable").forEach((element) => {
+      element.setAttribute("contenteditable", "false");
+    });
+  } else {
+    editorView.querySelectorAll(".cms-editable").forEach((element) => {
+      element.setAttribute("contenteditable", "true");
+    });
+  }
+
+  if (mode === "compare") {
+    updateCompareViews();
+  }
+}
+
+function updateCompareViews() {
+  const currentClone = $("visualEditor").cloneNode(true);
+
+  // Remove CMS-only wrappers/controls from the comparison copy.
+  cleanCmsMarkup(currentClone);
+
+  $("compareEditor").innerHTML = currentClone.innerHTML;
+  $("compareOriginal").innerHTML = originalBodyHTML;
+}
+
+/*
+  Removes CMS wrappers while retaining their frontend child content.
+  This ensures the saved page does not contain editor labels or buttons.
+*/
+function cleanCmsMarkup(root) {
+  root.querySelectorAll(".cms-section").forEach((wrapper) => {
+    const parent = wrapper.parentNode;
+
+    Array.from(wrapper.childNodes).forEach((child) => {
+      if (
+        child.nodeType === Node.ELEMENT_NODE &&
+        (child.classList.contains("cms-section-label") ||
+         child.classList.contains("cms-section-edit"))
+      ) {
+        return;
+      }
+
+      parent.insertBefore(child.cloneNode(true), wrapper);
+    });
+
+    parent.removeChild(wrapper);
+  });
+
+  root.querySelectorAll(".cms-editable").forEach((element) => {
+    element.classList.remove("cms-editable", "cms-table-cell");
+    element.removeAttribute("contenteditable");
+    element.removeAttribute("spellcheck");
+  });
+
+  root.querySelectorAll("[data-cms-wrapper]").forEach((element) => {
+    element.removeAttribute("data-cms-wrapper");
+  });
+
+  root.querySelectorAll(".cms-section-label,.cms-section-edit").forEach((element) => {
+    element.remove();
+  });
+}
+
+/* ==============================
+   TABLE CONTROLS
+================================ */
+function getActiveTable() {
+  if (selectedTableCell) return selectedTableCell.closest("table");
+
+  const selection = window.getSelection();
+  if (selection && selection.anchorNode) {
+    const node = selection.anchorNode.nodeType === Node.ELEMENT_NODE
+      ? selection.anchorNode
+      : selection.anchorNode.parentElement;
+
+    return node?.closest("table");
+  }
+
+  return null;
+}
+
+function addTableRow() {
+  const table = getActiveTable();
+
+  if (!table) {
+    showNotice("Click inside a table first, then add a row.");
     return;
   }
 
-  document.execCommand(command, false, null);
+  const body = table.tBodies[0] || table;
+  const referenceRow = table.rows[table.rows.length - 1];
+
+  if (!referenceRow) {
+    showNotice("This table does not contain a row to copy.");
+    return;
+  }
+
+  const newRow = referenceRow.cloneNode(true);
+
+  Array.from(newRow.cells).forEach((cell) => {
+    cell.textContent = "";
+    cell.classList.add("cms-editable", "cms-table-cell");
+    cell.setAttribute("contenteditable", "true");
+    cell.addEventListener("focus", () => selectedTableCell = cell);
+  });
+
+  body.appendChild(newRow);
+  selectedTableCell = newRow.cells[0] || null;
+}
+
+function deleteTableRow() {
+  const table = getActiveTable();
+
+  if (!table || !selectedTableCell) {
+    showNotice("Click inside the table row you want to delete.");
+    return;
+  }
+
+  const row = selectedTableCell.closest("tr");
+
+  if (table.rows.length <= 1) {
+    showNotice("A table must contain at least one row.");
+    return;
+  }
+
+  if (!confirm("Delete this table row?")) return;
+
+  row.remove();
+  selectedTableCell = null;
+}
+
+/* ==============================
+   SAVE / PUBLISH
+================================ */
+function buildCleanPageHTML() {
+  const clone = $("visualEditor").cloneNode(true);
+  cleanCmsMarkup(clone);
+
+  return clone.innerHTML;
 }
 
 async function save() {
@@ -488,7 +991,9 @@ async function save() {
     const old = await api("/api/page/" + encodeURIComponent(current));
     const doc = new DOMParser().parseFromString(old.html, "text/html");
 
-    doc.body.innerHTML = $("editor").innerHTML;
+    // Preserve original <head>, scripts and page shell.
+    // Only the CMS page body content is updated.
+    doc.body.innerHTML = buildCleanPageHTML();
 
     await api("/api/page/" + encodeURIComponent(current), {
       method: "PUT",
@@ -498,7 +1003,10 @@ async function save() {
       })
     });
 
-    showNotice("Draft saved successfully.", "success");
+    originalBodyHTML = buildCleanPageHTML();
+    updateCompareViews();
+
+    showNotice("Draft saved successfully. The frontend HTML structure has been preserved.", "success");
     await load();
   } catch (error) {
     showNotice(error.message || "Unable to save the draft.");
@@ -527,6 +1035,33 @@ async function publish() {
   }
 }
 
+/* ==============================
+   EDITING TOOLS
+================================ */
+function cmd(command) {
+  const selection = window.getSelection();
+
+  if (!selection || !selection.rangeCount) {
+    showNotice("Click inside editable content first.");
+    return;
+  }
+
+  if (command === "createLink") {
+    const url = prompt("Enter the URL");
+
+    if (url) {
+      document.execCommand("createLink", false, url);
+    }
+
+    return;
+  }
+
+  document.execCommand(command, false, null);
+}
+
+/* ==============================
+   CMS CRUD / SYNC
+================================ */
 function openModal(type) {
   if (type === "page" && !(data?.colleges || []).length) {
     showNotice("Add or sync a college before creating a page.");
@@ -610,7 +1145,8 @@ async function syncPages() {
     const result = await api("/api/sync", { method: "POST" });
     await load();
 
-    const addedPages = result.added.filter((item) => item.type === "page").length;
+    const addedPages = (result.added || []).filter((item) => item.type === "page").length;
+
     showNotice(
       `Sync complete: ${result.scanned} HTML files scanned and ${addedPages} new CMS pages added.`,
       "success"
@@ -623,13 +1159,41 @@ async function syncPages() {
   }
 }
 
+/* ==============================
+   NAVIGATION
+================================ */
+function showEditor(show) {
+  $("mainTop").style.display = show ? "none" : "flex";
+  $("editorView").style.display = show ? "block" : "none";
+
+  if (!show) {
+    ["dashboardView", "pagesView", "templatesView", "seoView", "historyView"].forEach((id) => {
+      $(id).style.display = "none";
+    });
+
+    $(currentView + "View").style.display = "block";
+  }
+}
+
+function backToPages() {
+  current = null;
+  setEditorMode("edit");
+  showView("dashboard");
+
+  $("collegeSelect").value = currentCollegeId;
+  onCollegeChange();
+
+  $("pageSelect").value = currentPageId;
+  onPageChange();
+}
+
 async function showView(view) {
   currentView = view;
   current = null;
 
   const meta = {
     dashboard: ["Editorial Dashboard", "One workspace for existing and future college pages."],
-    pages: ["College Pages", "Browse all pages and open any page for editing."],
+    pages: ["College Pages", "Browse all pages and open any page in the Structure Mirror editor."],
     templates: ["Templates", "Available page templates used when creating new CMS pages."],
     seo: ["SEO Centre", "SEO information and future audit tools for your pages."],
     history: ["Publish History", "Recently published CMS pages."]
@@ -642,11 +1206,13 @@ async function showView(view) {
     button.classList.toggle("active", button.dataset.view === view);
   });
 
+  $("mainTop").style.display = "flex";
+  $("editorView").style.display = "none";
+
   ["dashboardView", "pagesView", "templatesView", "seoView", "historyView"].forEach((id) => {
     $(id).style.display = "none";
   });
 
-  $("editorView").style.display = "none";
   $(view + "View").style.display = "block";
 
   if (view === "history") {
@@ -678,6 +1244,7 @@ function signOut() {
   }
 }
 
+/* Modal background click */
 document.querySelectorAll(".modal").forEach((modal) => {
   modal.addEventListener("click", (event) => {
     if (event.target === modal) closeModal();
