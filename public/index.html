@@ -917,8 +917,17 @@ const BLOCK_SELECTORS = [
 
 const EDITABLE_TEXT_SELECTOR = [
   "h1","h2","h3","h4","h5","h6",
-  "p","li","blockquote","a",
-  "td","th","figcaption"
+  "p","li","blockquote","a","span","strong","em","b","i","small","label",
+  "td","th","figcaption","caption","dt","dd"
+].join(",");
+
+// The Structure Mirror should allow editing anywhere the page contains visible content.
+// These are CMS controls or interactive frontend controls that must stay functional.
+const NON_EDITABLE_SELECTOR = [
+  "script","style","link","meta","base","noscript","template",
+  "iframe","object","embed",
+  "button","input","select","textarea","option","form",
+  ".cms-section-label",".cms-section-edit"
 ].join(",");
 
 async function edit(id) {
@@ -975,8 +984,13 @@ function renderStructuredEditor(html) {
 
   $("visualEditor").innerHTML = container.innerHTML;
 
-  // Make headings, paragraphs, links and table cells editable after rendering.
-  prepareEditorInteractions($("visualEditor"));
+  // Enable direct editing across the complete mirrored page, not only selected tags.
+  // Individual CMS labels and real form controls remain protected.
+  const editorRoot = $("visualEditor");
+  enableWholePageEditing(editorRoot);
+
+  // Keep semantic text elements highlighted for easier visual editing.
+  prepareEditorInteractions(editorRoot);
   updateCompareViews();
 }
 
@@ -1080,6 +1094,24 @@ function wrapAsCmsSection(element, fallbackLabel = "Section") {
   wrapper.appendChild(element);
 }
 
+function enableWholePageEditing(root) {
+  root.classList.add("cms-editing-root");
+  root.setAttribute("contenteditable", "true");
+
+  root.querySelectorAll(NON_EDITABLE_SELECTOR).forEach((element) => {
+    element.setAttribute("contenteditable", "false");
+  });
+}
+
+function setWholePageEditing(enabled) {
+  const root = $("visualEditor");
+  root.setAttribute("contenteditable", enabled ? "true" : "false");
+
+  root.querySelectorAll(NON_EDITABLE_SELECTOR).forEach((element) => {
+    element.setAttribute("contenteditable", "false");
+  });
+}
+
 function decorateEditableElements(root) {
   const elements = [];
 
@@ -1147,12 +1179,17 @@ function setEditorMode(mode) {
   stage.classList.toggle("preview-mode", mode === "preview");
 
   if (mode === "preview") {
+    setWholePageEditing(false);
     editorView.querySelectorAll(".cms-editable").forEach((element) => {
       element.setAttribute("contenteditable", "false");
     });
   } else {
+    setWholePageEditing(true);
     editorView.querySelectorAll(".cms-editable").forEach((element) => {
       element.setAttribute("contenteditable", "true");
+    });
+    editorView.querySelectorAll(NON_EDITABLE_SELECTOR).forEach((element) => {
+      element.setAttribute("contenteditable", "false");
     });
   }
 
@@ -1196,6 +1233,14 @@ function cleanCmsMarkup(root) {
 
   root.querySelectorAll(".cms-editable").forEach((element) => {
     element.classList.remove("cms-editable", "cms-table-cell");
+    element.removeAttribute("spellcheck");
+  });
+
+  // Whole-page editing adds contenteditable to many frontend nodes. Never save
+  // those editor-only attributes back to the live website.
+  root.removeAttribute("contenteditable");
+  root.classList.remove("cms-editing-root");
+  root.querySelectorAll("[contenteditable]").forEach((element) => {
     element.removeAttribute("contenteditable");
     element.removeAttribute("spellcheck");
   });
@@ -1288,38 +1333,43 @@ function buildCleanPageHTML() {
 }
 
 async function save() {
-  if (!current) return;
+  if (!current) throw new Error("No page is currently open.");
 
-  try {
-    const old = await api("/api/page/" + encodeURIComponent(current));
-    const doc = new DOMParser().parseFromString(old.html, "text/html");
+  const old = await api("/api/page/" + encodeURIComponent(current));
+  const doc = new DOMParser().parseFromString(old.html, "text/html");
 
-    // Preserve original <head>, scripts and page shell.
-    // Only the CMS page body content is updated.
-    doc.body.innerHTML = buildCleanPageHTML();
+  // Preserve the original <head>, scripts and page shell. Only the edited
+  // frontend body is replaced with the cleaned Structure Mirror content.
+  const cleanedBody = buildCleanPageHTML();
+  doc.body.innerHTML = cleanedBody;
 
-    await api("/api/page/" + encodeURIComponent(current), {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        html: "<!doctype html>" + doc.documentElement.outerHTML
-      })
-    });
+  await api("/api/page/" + encodeURIComponent(current), {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      html: "<!doctype html>" + doc.documentElement.outerHTML
+    })
+  });
 
-    originalBodyHTML = buildCleanPageHTML();
-    updateCompareViews();
-
-    showNotice("Draft saved successfully. The frontend HTML structure has been preserved.", "success");
-    await load();
-  } catch (error) {
-    showNotice(error.message || "Unable to save the draft.");
-  }
+  originalBodyHTML = cleanedBody;
+  updateCompareViews();
+  showNotice("Draft saved successfully. Your changes are ready to publish.", "success");
+  return true;
 }
 
 async function publish() {
   if (!current) return;
 
+  const publishButton = document.querySelector(".editor-header-actions .btn.primary");
+  const originalText = publishButton ? publishButton.textContent : "Publish";
+
   try {
+    if (publishButton) {
+      publishButton.disabled = true;
+      publishButton.textContent = "Publishing...";
+    }
+
+    // Publishing must stop immediately if saving the current editor fails.
     await save();
 
     const result = await api(
@@ -1327,14 +1377,15 @@ async function publish() {
       { method: "POST" }
     );
 
-    showNotice(result.message || "Page published successfully.", "success");
     await load();
-
-    if (result.url && confirm("Published successfully. Open the published page now?")) {
-      window.open(result.url, "_blank");
-    }
+    showNotice(result.message || "Published successfully and sent to the live website.", "success");
   } catch (error) {
     showNotice(error.message || "Unable to publish this page.");
+  } finally {
+    if (publishButton) {
+      publishButton.disabled = false;
+      publishButton.textContent = originalText;
+    }
   }
 }
 
