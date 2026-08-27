@@ -156,14 +156,38 @@ input,select{
 #visualEditor img{max-width:100%;height:auto}
 #visualEditor a{color:#2563eb}
 
-/* Tables remain actual tables */
-#visualEditor table{width:100%;border-collapse:collapse;margin:14px 0}
-#visualEditor th,#visualEditor td{
-  border:1px solid #dce3ed;padding:9px 10px;vertical-align:top
+/* TABLE STRUCTURE LOCK
+   Frontend CSS is allowed to provide typography, but cannot flatten a real table
+   inside the CMS editor. These rules intentionally override display changes. */
+#visualEditor table{
+  display:table!important;width:100%!important;max-width:100%;
+  border-collapse:collapse!important;border-spacing:0!important;margin:14px 0
 }
-#visualEditor th{background:#f5f8fc;text-align:left}
+#visualEditor caption{display:table-caption!important}
+#visualEditor thead{display:table-header-group!important}
+#visualEditor tbody{display:table-row-group!important}
+#visualEditor tfoot{display:table-footer-group!important}
+#visualEditor tr{display:table-row!important}
+#visualEditor th,#visualEditor td{
+  display:table-cell!important;border:1px solid #dce3ed;padding:9px 10px;
+  vertical-align:top!important;white-space:normal!important
+}
+#visualEditor th{background:#f5f8fc;text-align:left;font-weight:700}
 #visualEditor .table-wrapper,
 #visualEditor .programme-fee-table{overflow-x:auto;margin:14px 0}
+
+/* Keep link/navigation groups readable instead of running links together */
+#visualEditor .cms-link-group{
+  display:flex!important;flex-wrap:wrap!important;gap:6px 12px!important;
+  align-items:flex-start
+}
+#visualEditor .cms-link-group a{
+  display:inline-block!important;margin:0!important;padding:2px 0
+}
+
+/* Generic list preservation */
+#visualEditor ul,#visualEditor ol{padding-left:24px;margin:10px 0}
+#visualEditor li{display:list-item!important;margin:4px 0}
 
 /* Generic visual treatment for common frontend content boxes.
    Original classes and HTML remain untouched. */
@@ -223,6 +247,13 @@ input,select{
 .compare-scroll .cms-section{padding:0;margin:0;border:0;background:transparent}
 .compare-scroll .cms-section-label,.compare-scroll .cms-section-edit{display:none!important}
 .compare-scroll .cms-editable{outline:0!important;cursor:default}
+.compare-scroll table{
+  display:table!important;width:100%!important;border-collapse:collapse!important
+}
+.compare-scroll tr{display:table-row!important}
+.compare-scroll th,.compare-scroll td{
+  display:table-cell!important;border:1px solid #dce3ed;padding:9px 10px
+}
 
 .history-row{padding:13px 0;border-bottom:1px solid var(--line)}
 .history-row:last-child{border-bottom:0}
@@ -651,7 +682,7 @@ const BLOCK_SELECTORS = [
 
 const EDITABLE_TEXT_SELECTOR = [
   "h1","h2","h3","h4","h5","h6",
-  "p","li","blockquote",
+  "p","li","blockquote","a",
   "td","th","figcaption"
 ].join(",");
 
@@ -684,6 +715,10 @@ function renderStructuredEditor(html) {
   const container = document.createElement("div");
   container.innerHTML = html;
 
+  // Normalise only display behaviour inside the CMS. The original HTML,
+  // attributes and classes are still preserved for saving and publishing.
+  normaliseFrontendStructure(container);
+
   // Add CMS wrappers to top-level content and meaningful frontend blocks.
   const topNodes = Array.from(container.childNodes);
 
@@ -705,9 +740,41 @@ function renderStructuredEditor(html) {
 
   $("visualEditor").innerHTML = container.innerHTML;
 
-  // Make headings/paragraphs/table cells editable after the DOM is rendered.
+  // Make headings, paragraphs, links and table cells editable after rendering.
   prepareEditorInteractions($("visualEditor"));
   updateCompareViews();
+}
+
+/* =================================
+   FRONTEND STRUCTURE NORMALISATION
+   This prevents inherited frontend CSS from flattening semantic HTML.
+================================= */
+function normaliseFrontendStructure(root) {
+  root.querySelectorAll("table").forEach((table) => {
+    table.classList.add("cms-real-table");
+
+    // Remove only inline display styles that can flatten the table.
+    // We do not remove classes or semantic attributes.
+    [table, ...table.querySelectorAll("thead,tbody,tfoot,tr,th,td")].forEach((el) => {
+      if (el.style && el.style.display) el.style.removeProperty("display");
+    });
+  });
+
+  // Navigation or link clusters often appear as a sequence of inline links.
+  // Mark them so the editor presents each link separately and clearly.
+  root.querySelectorAll("div,nav,section,p").forEach((el) => {
+    if (el.closest("table")) return;
+    const directLinks = Array.from(el.children).filter((child) => child.tagName === "A");
+    if (directLinks.length >= 2) {
+      el.classList.add("cms-link-group");
+    }
+  });
+
+  // If a page contains a labelled navigation paragraph followed by several
+  // links without separators, make only that paragraph readable in the CMS.
+  root.querySelectorAll("a").forEach((link) => {
+    link.setAttribute("data-cms-link", "true");
+  });
 }
 
 function shouldWrapAsSection(element) {
@@ -806,7 +873,8 @@ function decorateEditableElements(root) {
 function prepareEditorInteractions(root) {
   root.querySelectorAll("a").forEach((link) => {
     link.addEventListener("click", (event) => {
-      if (editorMode === "edit") event.preventDefault();
+      // Links must never navigate away while editing or comparing.
+      event.preventDefault();
     });
   });
 
