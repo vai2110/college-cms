@@ -997,6 +997,283 @@ function editSelectedPage() {
   edit(`${currentCollegeId}:${currentPageId}`);
 }
 
+
+/* ==============================
+   SEO CENTRE
+================================ */
+
+function resetSeoEditor() {
+  $("seoEditorPanel").style.display = "none";
+  $("seoEmptyState").style.display = "block";
+
+  $("seoHeaderTitle").value = "";
+  $("seoTitle").value = "";
+  $("seoDescription").value = "";
+  $("seoKeywords").value = "";
+
+  $("seoTitleCount").textContent = "0 characters";
+  $("seoDescriptionCount").textContent = "0 characters";
+  $("seoPreviewUrl").textContent = "Select a page to preview its URL.";
+  $("seoPreviewTitle").textContent = "SEO Title";
+  $("seoPreviewDescription").textContent = "SEO description will appear here.";
+}
+
+function getSeoSelectedCollege() {
+  return data?.colleges?.find((college) => college.id === seoCollegeId) || null;
+}
+
+function getSeoSelectedPage() {
+  const college = getSeoSelectedCollege();
+  return college?.pages?.find((page) => page.id === seoPageId) || null;
+}
+
+function onSeoCollegeChange() {
+  seoCollegeId = $("seoCollegeSelect").value;
+  seoPageId = "";
+
+  resetSeoEditor();
+  populateSeoPages();
+}
+
+function populateSeoPages() {
+  const pageSelect = $("seoPageSelect");
+  const college = getSeoSelectedCollege();
+
+  pageSelect.innerHTML = `<option value="">Select a page</option>`;
+  pageSelect.disabled = true;
+
+  if (!college) return;
+
+  const pages = college.pages || [];
+
+  if (!pages.length) {
+    pageSelect.innerHTML = `<option value="">No pages available</option>`;
+    return;
+  }
+
+  pageSelect.disabled = false;
+  pageSelect.innerHTML =
+    `<option value="">Select a page</option>` +
+    pages.map((page) =>
+      `<option value="${escapeHtml(page.id)}">${escapeHtml(page.name)}</option>`
+    ).join("");
+
+  if (seoPageId && pages.some((page) => page.id === seoPageId)) {
+    pageSelect.value = seoPageId;
+  }
+}
+
+function onSeoPageChange() {
+  seoPageId = $("seoPageSelect").value;
+
+  if (!seoCollegeId || !seoPageId) {
+    resetSeoEditor();
+    return;
+  }
+
+  loadSeoPage();
+}
+
+function getPageUrl(college, page) {
+  if (page.url) return page.url;
+  if (page.path) return page.path;
+
+  const collegeSlug = college.slug || "";
+  const pageSlug = page.slug || "";
+
+  if (pageSlug && /^https?:\/\//i.test(pageSlug)) return pageSlug;
+
+  if (collegeSlug && pageSlug) {
+    return `/${collegeSlug}/${pageSlug}`.replace(/\/+/g, "/");
+  }
+
+  if (collegeSlug) return `/${collegeSlug}`.replace(/\/+/g, "/");
+  return "Selected page URL";
+}
+
+function getPageHeaderTitle(page) {
+  return page.seo?.headerTitle ||
+    page.headerTitle ||
+    page.seoHeaderTitle ||
+    "";
+}
+
+function getPageSeoTitle(page) {
+  return page.seo?.title ||
+    page.seoTitle ||
+    page.title ||
+    "";
+}
+
+function getPageSeoDescription(page) {
+  return page.seo?.description ||
+    page.seoDescription ||
+    page.description ||
+    "";
+}
+
+function getPageSeoKeywords(page) {
+  const keywords =
+    page.seo?.keywords ??
+    page.seoKeywords ??
+    page.keywords ??
+    "";
+
+  return Array.isArray(keywords) ? keywords.join(", ") : keywords;
+}
+
+function loadSeoPage() {
+  const college = getSeoSelectedCollege();
+  const page = getSeoSelectedPage();
+
+  if (!college || !page) {
+    resetSeoEditor();
+    return;
+  }
+
+  $("seoEditorPanel").style.display = "block";
+  $("seoEmptyState").style.display = "none";
+
+  $("seoEditorTitle").textContent = `${college.name} · ${page.name}`;
+  $("seoEditorSubtitle").textContent =
+    "Update page-level SEO details independently from the content editor.";
+  $("seoPageCategory").textContent =
+    getCategoryLabel(getPageCategory(page, college));
+
+  $("seoHeaderTitle").value = getPageHeaderTitle(page);
+  $("seoTitle").value = getPageSeoTitle(page);
+  $("seoDescription").value = getPageSeoDescription(page);
+  $("seoKeywords").value = getPageSeoKeywords(page);
+
+  updateSeoPreview();
+}
+
+function updateSeoPreview() {
+  const title = $("seoTitle").value.trim();
+  const description = $("seoDescription").value.trim();
+
+  $("seoTitleCount").textContent = `${title.length} characters`;
+  $("seoDescriptionCount").textContent = `${description.length} characters`;
+
+  const college = getSeoSelectedCollege();
+  const page = getSeoSelectedPage();
+
+  if (college && page) {
+    $("seoPreviewUrl").textContent = getPageUrl(college, page);
+  }
+
+  $("seoPreviewTitle").textContent =
+    title || page?.name || "SEO Title";
+
+  $("seoPreviewDescription").textContent =
+    description || "SEO description will appear here.";
+}
+
+function buildSeoPayload() {
+  return {
+    headerTitle: $("seoHeaderTitle").value.trim(),
+    title: $("seoTitle").value.trim(),
+    description: $("seoDescription").value.trim(),
+    keywords: $("seoKeywords").value
+      .split(",")
+      .map((keyword) => keyword.trim())
+      .filter(Boolean)
+  };
+}
+
+async function saveSeoDraft() {
+  if (!seoCollegeId || !seoPageId) {
+    showNotice("Please select a college and page first.");
+    return;
+  }
+
+  const button = $("saveSeoBtn");
+  const originalText = button.textContent;
+
+  try {
+    button.disabled = true;
+    button.textContent = "Saving...";
+
+    const pageId = `${seoCollegeId}:${seoPageId}`;
+    const seo = buildSeoPayload();
+
+    await api("/api/page/" + encodeURIComponent(pageId) + "/seo", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ seo })
+    });
+
+    await load();
+
+    // Restore the active SEO selection after the data refresh.
+    $("seoCollegeSelect").value = seoCollegeId;
+    populateSeoPages();
+    $("seoPageSelect").value = seoPageId;
+    loadSeoPage();
+
+    showNotice("SEO draft saved successfully.", "success");
+  } catch (error) {
+    showNotice(
+      error.message ||
+      "Unable to save SEO details. Please check that the SEO API endpoint is available."
+    );
+  } finally {
+    button.disabled = false;
+    button.textContent = originalText;
+  }
+}
+
+async function publishSeoChanges() {
+  if (!seoCollegeId || !seoPageId) {
+    showNotice("Please select a college and page first.");
+    return;
+  }
+
+  const button = $("publishSeoBtn");
+  const originalText = button.textContent;
+
+  try {
+    button.disabled = true;
+    button.textContent = "Publishing...";
+
+    // Save the latest form values before publishing.
+    const pageId = `${seoCollegeId}:${seoPageId}`;
+    const seo = buildSeoPayload();
+
+    await api("/api/page/" + encodeURIComponent(pageId) + "/seo", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ seo })
+    });
+
+    const result = await api(
+      "/api/page/" + encodeURIComponent(pageId) + "/publish",
+      { method: "POST" }
+    );
+
+    await load();
+
+    $("seoCollegeSelect").value = seoCollegeId;
+    populateSeoPages();
+    $("seoPageSelect").value = seoPageId;
+    loadSeoPage();
+
+    showNotice(
+      result.message || "SEO changes published successfully.",
+      "success"
+    );
+  } catch (error) {
+    showNotice(
+      error.message ||
+      "Unable to publish SEO changes. Please check the API endpoint."
+    );
+  } finally {
+    button.disabled = false;
+    button.textContent = originalText;
+  }
+}
+
+
 /* ==============================
    STRUCTURE MIRROR EDITOR
 ================================ */
@@ -1715,6 +1992,8 @@ async function signOut() {
   current = null;
   currentCollegeId = "";
   currentPageId = "";
+  seoCollegeId = "";
+  seoPageId = "";
   data = null;
 
   $("loginUsername").value = "";
