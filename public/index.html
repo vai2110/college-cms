@@ -705,13 +705,68 @@ async function signIn(event) {
    Uses an explicit category when the API provides one. Existing pages created
    before categories were introduced are classified from their name/type.
 ================================= */
-function getPageCategory(page = {}) {
+function normaliseCategoryKey(value = "") {
+  return String(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+/*
+  Exact mapping for the 23 pages already created in this CMS.
+  This runs before the generic rules because many existing pages use the
+  same template name (for example, Overview), while their content category
+  is different. New pages can still use their saved category or the fallback
+  detection rules below.
+*/
+const EXISTING_CATEGORY_MAP = {
+  "iit delhi dms": "college",
+  "iim ahmedabad business analytics ai": "course",
+  "iim ahmedabad mba fabm": "course",
+  "iim ahmedabad mba": "course",
+  "iim ahmedabad pgpx": "course",
+  "iim ahmedabad": "college",
+  "iim bangalore": "college",
+  "iim calcutta mba": "course",
+  "iim calcutta mbaex": "course",
+  "iim calcutta pgdba": "course",
+  "iim calcutta": "college",
+  "iim indore": "college",
+  "iim kozhikode": "college",
+  "iim lucknow": "college",
+  "iim mumbai": "college",
+  "mdi gurugram": "college",
+  "snap": "exam",
+  "xat": "exam",
+  "xlri jamshedpur": "college"
+};
+
+function getPageCategory(page = {}, college = {}) {
+  const collegeName = normaliseCategoryKey(college.name || page.collegeName || "");
+  const pageName = normaliseCategoryKey(page.name || "");
+  const pageType = normaliseCategoryKey(page.type || "");
+  const pageSlug = normaliseCategoryKey(page.slug || "");
+
+  // Placement pages are identified by their page itself, regardless of college.
+  if (/\bplacement|placements|salary|recruiter|recruitment\b/.test(`${pageName} ${pageType} ${pageSlug}`)) {
+    return "placement";
+  }
+
+  // Exact mapping for the existing 23-page CMS list.
+  if (EXISTING_CATEGORY_MAP[collegeName]) {
+    return EXISTING_CATEGORY_MAP[collegeName];
+  }
+
+  // Explicit category selected for future pages takes priority for pages
+  // outside the existing mapped list.
   const explicit = String(page.category || "").toLowerCase();
   if (["college", "course", "exam", "placement"].includes(explicit)) return explicit;
-  const text = `${page.name || ""} ${page.type || ""} ${page.slug || ""}`.toLowerCase();
-  if (/placement|salary|recruiter|recruitment/.test(text)) return "placement";
+
+  const text = `${collegeName} ${pageName} ${pageType} ${pageSlug}`;
   if (/\b(cat|xat|snap|cmat|mat|gmat|gre|gate|jee|neet|cuet|nmat|iift|tissnet)\b/.test(text)) return "exam";
   if (/\b(mba|pgp|pgpx|pgdm|fabm|pgdba|programme|program|course)\b|business analytics|executive mba/.test(text)) return "course";
+
   return "college";
 }
 function getCategoryLabel(category) {
@@ -723,10 +778,15 @@ async function load() {
     data = await api("/api/colleges");
 
     const colleges = data.colleges || [];
-    const pages = colleges.flatMap((college) => college.pages || []);
+    const pageEntries = colleges.flatMap((college) =>
+      (college.pages || []).map((page) => ({ college, page }))
+    );
+    const pages = pageEntries.map((entry) => entry.page);
 
     const categoryCounts = { college: 0, course: 0, exam: 0, placement: 0 };
-    pages.forEach((page) => { categoryCounts[getPageCategory(page)] += 1; });
+    pageEntries.forEach(({ college, page }) => {
+      categoryCounts[getPageCategory(page, college)] += 1;
+    });
     $("collegePageCount").textContent = categoryCounts.college;
     $("coursePageCount").textContent = categoryCounts.course;
     $("examPageCount").textContent = categoryCounts.exam;
@@ -775,7 +835,7 @@ function renderAllPages() {
         <div class="page" onclick="edit('${college.id}:${page.id}')">
           <span class="badge">${escapeHtml(page.status)}</span>
           <b>${escapeHtml(college.name)} · ${escapeHtml(page.name)}</b>
-          <div class="category-badge">${escapeHtml(getCategoryLabel(getPageCategory(page)))}</div>
+          <div class="category-badge">${escapeHtml(getCategoryLabel(getPageCategory(page, college)))}</div>
           <div class="muted">Template: ${escapeHtml(page.type || "custom")}</div>
         </div>
       `).join("")
@@ -813,7 +873,7 @@ function onCollegeChange() {
         <div class="page" onclick="edit('${college.id}:${page.id}')">
           <span class="badge">${escapeHtml(page.status)}</span>
           <b>${escapeHtml(page.name)}</b>
-          <div class="category-badge">${escapeHtml(getCategoryLabel(getPageCategory(page)))}</div>
+          <div class="category-badge">${escapeHtml(getCategoryLabel(getPageCategory(page, college)))}</div>
           <div class="muted">Template: ${escapeHtml(page.type || "custom")}</div>
         </div>
       `).join("")
