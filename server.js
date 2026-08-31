@@ -18,6 +18,127 @@ const WEBSITE_BRANCH = process.env.WEBSITE_BRANCH || 'main';
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN || '';
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || '';
+// =========================================================
+// MEDIA / DOCUMENT SETTINGS
+// =========================================================
+
+const MEDIA_ROOT = path.join(ROOT, 'media');
+
+const IMAGE_EXTENSIONS = new Set([
+  '.jpg',
+  '.jpeg',
+  '.png',
+  '.webp',
+  '.gif'
+]);
+
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10 MB
+const MAX_PDF_BYTES = 25 * 1024 * 1024;   // 25 MB
+
+function safeFileName(value = '') {
+  return String(value)
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9._-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function getMediaDirectory(collegeId, pageId) {
+  return path.join(
+    MEDIA_ROOT,
+    safeFileName(collegeId),
+    safeFileName(pageId)
+  );
+}
+
+function getMediaPublicPath(collegeId, pageId, fileName) {
+  return `/media/${encodeURIComponent(safeFileName(collegeId))}/${encodeURIComponent(safeFileName(pageId))}/${encodeURIComponent(fileName)}`;
+}
+
+function validateBase64File(dataUrl, expectedType) {
+  const match = String(dataUrl || '').match(
+    /^data:([^;]+);base64,([\s\S]+)$/
+  );
+
+  if (!match) {
+    throw new Error('Invalid file data.');
+  }
+
+  const mimeType = match[1].toLowerCase();
+  const base64 = match[2];
+
+  if (mimeType !== expectedType) {
+    throw new Error(`Invalid file type. Expected ${expectedType}.`);
+  }
+
+  const buffer = Buffer.from(base64, 'base64');
+
+  return {
+    mimeType,
+    buffer
+  };
+}
+
+function validateImageFile(dataUrl) {
+  const match = String(dataUrl || '').match(
+    /^data:([^;]+);base64,([\s\S]+)$/
+  );
+
+  if (!match) {
+    throw new Error('Invalid image data.');
+  }
+
+  const mimeType = match[1].toLowerCase();
+
+  const allowedTypes = new Set([
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+    'image/gif'
+  ]);
+
+  if (!allowedTypes.has(mimeType)) {
+    throw new Error(
+      'Unsupported image type. Use JPG, PNG, WEBP or GIF.'
+    );
+  }
+
+  const buffer = Buffer.from(match[2], 'base64');
+
+  if (buffer.length > MAX_IMAGE_BYTES) {
+    throw new Error('Image is too large. Maximum size is 10 MB.');
+  }
+
+  return {
+    mimeType,
+    buffer
+  };
+}
+
+function validatePdfFile(dataUrl) {
+  const file = validateBase64File(
+    dataUrl,
+    'application/pdf'
+  );
+
+  if (file.buffer.length > MAX_PDF_BYTES) {
+    throw new Error('PDF is too large. Maximum size is 25 MB.');
+  }
+
+  return file;
+}
+
+function extensionForMime(mimeType) {
+  const map = {
+    'image/jpeg': '.jpg',
+    'image/png': '.png',
+    'image/webp': '.webp',
+    'image/gif': '.gif',
+    'application/pdf': '.pdf'
+  };
+
+  return map[mimeType] || '';
+}
 const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || '';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
 const SESSION_SECRET =
@@ -687,7 +808,135 @@ app.get('/api/me', (req, res) => {
 ========================================================= */
 
 app.use('/api', requireAuth);
+// =========================================================
+// MEDIA UPLOAD API
+// Files are stored page-wise:
+//
+// media/
+//   college-id/
+//     page-id/
+//       image.webp
+//       official-document.pdf
+//
+// Nothing is automatically inserted into any page.
+// The frontend editor decides where the asset is inserted.
+// =========================================================
 
+app.post('/api/media/upload', (req, res) => {
+  try {
+    const collegeId = safeFileName(req.body.collegeId);
+    const pageId = safeFileName(req.body.pageId);
+    const kind = String(req.body.kind || '').toLowerCase();
+
+    const originalName = String(
+      req.body.originalName || ''
+    ).trim();
+
+    const dataUrl = req.body.dataUrl;
+
+    if (!collegeId || !pageId) {
+      return res.status(400).json({
+        error: 'College and page are required.'
+      });
+    }
+
+    if (!dataUrl) {
+      return res.status(400).json({
+        error: 'File data is required.'
+      });
+    }
+
+    if (!originalName) {
+      return res.status(400).json({
+        error: 'Original file name is required.'
+      });
+    }
+
+    if (!['image', 'pdf'].includes(kind)) {
+      return res.status(400).json({
+        error: 'Media type must be image or pdf.'
+      });
+    }
+
+    const file = kind === 'image'
+      ? validateImageFile(dataUrl)
+      : validatePdfFile(dataUrl);
+
+    const originalExt = path.extname(originalName).toLowerCase();
+
+    if (kind === 'image' && !IMAGE_EXTENSIONS.has(originalExt)) {
+      return res.status(400).json({
+        error: 'Unsupported image extension.'
+      });
+    }
+
+    if (kind === 'pdf' && originalExt !== '.pdf') {
+      return res.status(400).json({
+        error: 'Only PDF files are allowed.'
+      });
+    }
+
+    const baseName = safeFileName(
+      path.basename(
+        originalName,
+        originalExt
+      )
+    ) || `${kind}-${Date.now()}`;
+
+    const extension =
+      extensionForMime(file.mimeType) || originalExt;
+
+    const fileName =
+      `${baseName}-${Date.now()}${extension}`;
+
+    const directory =
+      getMediaDirectory(
+        collegeId,
+        pageId
+      );
+
+    fs.mkdirSync(
+      directory,
+      {
+        recursive: true
+      }
+    );
+
+    const absolutePath =
+      path.join(
+        directory,
+        fileName
+      );
+
+    fs.writeFileSync(
+      absolutePath,
+      file.buffer
+    );
+
+    const publicPath =
+      getMediaPublicPath(
+        collegeId,
+        pageId,
+        fileName
+      );
+
+    res.json({
+      ok: true,
+      kind,
+      fileName,
+      originalName,
+      mimeType: file.mimeType,
+      size: file.buffer.length,
+      url: publicPath
+    });
+
+  } catch (error) {
+    res.status(400).json({
+      error: error.message ||
+        'Unable to upload media.'
+    });
+  }
+});
 app.get('/api/config', (req, res) => {
   res.json({
     website:
@@ -1053,7 +1302,69 @@ app.put(
 /* =========================================================
    PUBLISH PAGE
 ========================================================= */
+// =========================================================
+// PUBLISH PAGE MEDIA TO WEBSITE REPOSITORY
+// =========================================================
 
+async function publishPageMedia(
+  found
+) {
+  const mediaDirectory =
+    getMediaDirectory(
+      found.college.id,
+      found.page.id
+    );
+
+  if (!fs.existsSync(mediaDirectory)) {
+    return [];
+  }
+
+  const files =
+    fs.readdirSync(
+      mediaDirectory
+    );
+
+  const published = [];
+
+  for (const fileName of files) {
+    const absolutePath =
+      path.join(
+        mediaDirectory,
+        fileName
+      );
+
+    if (!fs.statSync(absolutePath).isFile()) {
+      continue;
+    }
+
+    const buffer =
+      fs.readFileSync(
+        absolutePath
+      );
+
+    const targetPath =
+      `media/${safeFileName(found.college.id)}` +
+      `/${safeFileName(found.page.id)}` +
+      `/${fileName}`;
+
+    const result =
+      await putWebsiteBinaryFile(
+        targetPath,
+        buffer,
+        `CMS media: ${found.college.name} – ${found.page.name}`
+      );
+
+    published.push({
+      fileName,
+      targetPath,
+      sha:
+        result.content?.sha ||
+        null
+    });
+  }
+
+  return published;
+}
 app.post(
   '/api/page/:id/publish',
   async (req, res) => {
@@ -1063,7 +1374,10 @@ app.post(
           req.params.id
         )
       );
-
+const publishedMedia =
+  await publishPageMedia(
+    found
+  );
       if (!found) {
         return res.status(404).json({
           error: 'Not found'
@@ -1101,7 +1415,54 @@ app.post(
           html,
           `CMS publish: ${found.college.name} – ${found.page.name}`
         );
+// =========================================================
+// GITHUB BINARY FILE PUBLISHER
+// =========================================================
 
+async function putWebsiteBinaryFile(
+  targetPath,
+  buffer,
+  message
+) {
+  if (!GITHUB_TOKEN) {
+    throw new Error(
+      'GitHub publishing is not configured.'
+    );
+  }
+
+  let sha = null;
+
+  try {
+    const existing =
+      await getWebsiteFile(targetPath);
+
+    sha = existing.sha;
+
+  } catch (error) {
+    if (!/Not Found|404/i.test(error.message)) {
+      throw error;
+    }
+  }
+
+  return githubRequest(
+    'PUT',
+    `/repos/${WEBSITE_OWNER}/${WEBSITE_REPO}` +
+      `/contents/${githubContentPath(targetPath)}`,
+    {
+      message,
+
+      content:
+        buffer.toString('base64'),
+
+      branch:
+        WEBSITE_BRANCH,
+
+      ...(sha
+        ? { sha }
+        : {})
+    }
+  );
+}
       const verified =
         await getWebsiteFile(
           targetPath
@@ -1142,19 +1503,22 @@ app.post(
       save(data);
 
       res.json({
-        ok: true,
+  ok: true,
 
-        message:
-          `Published successfully to ${targetPath}.`,
+  message:
+    `Published successfully to ${targetPath}.`,
 
-        targetPath,
+  targetPath,
 
-        commit:
-          page.lastCommit,
+  media:
+    publishedMedia,
 
-        publishedAt:
-          page.publishedAt
-      });
+  commit:
+    page.lastCommit,
+
+  publishedAt:
+    page.publishedAt
+});
 
     } catch (error) {
       res.status(500).json({
@@ -1391,7 +1755,13 @@ app.post(
 /* =========================================================
    STATIC FILES
 ========================================================= */
-
+app.use(
+  '/media',
+  express.static(MEDIA_ROOT, {
+    fallthrough: false,
+    index: false
+  })
+);
 app.use(
   '/content',
   express.static(
