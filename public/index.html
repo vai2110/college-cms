@@ -23,12 +23,6 @@
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
-
-/* When an article is open, scrolling is contained by the editor shell. */
-body.editor-open{overflow:hidden}
-body.editor-open .app{height:100vh;min-height:100vh}
-body.editor-open main{height:100vh;min-height:0;overflow:hidden}
-
 button,input,select{font:inherit}
 code{background:#f1f5f9;padding:2px 5px;border-radius:4px}
 .app{display:flex;min-height:100vh}
@@ -106,151 +100,69 @@ input,select{
    STRUCTURED VISUAL EDITOR
 ================================ */
 #editorView{display:none}
-
-/*
-   EDITOR WORKSPACE
-   The editor is a self-contained viewport. The browser/page does not
-   scroll while an article is open; only the content area inside this box
-   scrolls. This keeps the toolbar permanently visible.
-*/
+#editorView.editor-open{display:block}
+body.editor-open{overflow:hidden}
 .editor-page{
   margin-top:20px;
   height:calc(100vh - 48px);
-  min-height:520px;
-  display:flex;
-  flex-direction:column;
-  min-width:0;
-}
-
-.editor-shell{
-  flex:1;
-  min-height:0;
+  min-height:620px;
   display:flex;
   flex-direction:column;
   overflow:hidden;
-  background:#eef2f7;
-  border:1px solid #cfd8e6;
+  background:#fff;
+  border:1px solid var(--line);
   border-radius:14px;
-  box-shadow:0 10px 30px rgba(20,35,60,.10);
+  box-shadow:0 6px 24px rgba(20,35,60,.08);
 }
-
 .editor-header{
   flex:0 0 auto;
-  position:relative;
-  z-index:20;
   background:#fff;
-  border:0;
   border-bottom:1px solid var(--line);
-  border-radius:0;
-  padding:14px 16px;
+  padding:14px 17px;
   display:flex;
   justify-content:space-between;
   align-items:flex-start;
   gap:16px;
 }
-
 .editor-header-actions{
   display:flex;
   gap:8px;
   flex-wrap:wrap;
   justify-content:flex-end;
 }
-
-/* Toolbar is part of the fixed top area of the editor shell. */
 .editor-toolbar{
   flex:0 0 auto;
-  position:relative;
-  z-index:19;
   margin:0;
   background:#fff;
-  border:0;
-  border-bottom:1px solid #cfd8e6;
-  border-radius:0;
-  padding:10px;
+  border-bottom:1px solid var(--line);
+  padding:9px;
   display:flex;
   gap:7px;
   align-items:center;
   flex-wrap:wrap;
-  box-shadow:0 3px 10px rgba(20,35,60,.07);
+  box-shadow:0 2px 8px rgba(20,35,60,.05);
+  z-index:5;
 }
-
 .tool{
-  padding:7px 10px;
-  border:1px solid var(--line);
-  background:#fff;
-  border-radius:6px;
-  cursor:pointer;
-  white-space:nowrap;
+  padding:7px 10px;border:1px solid var(--line);background:#fff;border-radius:6px;cursor:pointer
 }
 .tool:hover{background:#f8fafc}
 .toolbar-divider{height:26px;width:1px;background:var(--line);margin:0 2px}
 .mode-group{margin-left:auto;display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
 .mode-btn{border:0;background:#fff;padding:8px 11px;font-weight:700;cursor:pointer;font-size:12px}
 .mode-btn.active{background:#eaf1ff;color:var(--blue)}
-
-/*
-   This is the ONLY vertical scroll container for Edit/Preview.
-   The header + toolbar stay visible because they are outside this area.
-*/
 .editor-stage{
   flex:1 1 auto;
   min-height:0;
-  overflow:auto;
-  overscroll-behavior:contain;
+  overflow-y:auto;
+  overflow-x:hidden;
   background:#e9eef5;
-  border:0;
   padding:18px;
-  scrollbar-gutter:stable;
-}
-
-.editor-canvas{
-  width:min(1100px,100%);
-  margin:0 auto;
-  background:var(--editor-bg);
-  border:1px solid #d9e1ec;
-  border-radius:8px;
-  box-shadow:0 8px 28px rgba(20,35,60,.08);
-  min-height:calc(100% - 2px);
-  padding:28px;
-}
-
-/* Compare mode also stays completely inside the editor shell. */
-.compare-layout{
-  flex:1 1 auto;
-  min-height:0;
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:12px;
-  padding:12px;
-  overflow:hidden;
-  background:#e9eef5;
-}
-.compare-pane{
-  min-width:0;
-  min-height:0;
-  border:1px solid #cfd8e6;
-  border-radius:10px;
-  background:#fff;
-  overflow:hidden;
-  display:flex;
-  flex-direction:column;
-}
-.compare-pane-title{
-  flex:0 0 auto;
-  padding:10px 14px;
-  border-bottom:1px solid var(--line);
-  font-size:12px;
-  font-weight:800;
-  color:#4a5b72;
-  background:#f8fafc;
-}
-.compare-scroll{
-  flex:1 1 auto;
-  min-height:0;
-  overflow:auto;
   overscroll-behavior:contain;
-  padding:16px;
-  scrollbar-gutter:stable;
+}
+.editor-canvas{
+  width:min(1100px,100%);margin:0 auto;background:var(--editor-bg);border-radius:8px;
+  box-shadow:0 8px 28px rgba(20,35,60,.08);min-height:600px;padding:28px
 }
 
 /* Structure mirror wrappers are CMS-only and never saved */
@@ -265,79 +177,14 @@ input,select{
   display:flex;gap:7px;align-items:center
 }
 .cms-section-label span{
-  background:#eef4ff;border:1px solid #d8e5fb;padding:3px 6px;border-radius:12px;
-  font-size:9px
+  display:inline-block;padding:3px 6px;border-radius:20px;background:#eef3ff;color:#53719f;
+  border:1px solid #d7e2f6
 }
 .cms-section-edit{
-  position:absolute;right:10px;top:8px;padding:5px 8px;border:1px solid var(--line);
-  border-radius:6px;background:#fff;font-size:11px;font-weight:700;cursor:pointer;display:none
+  position:absolute;right:10px;top:7px;border:1px solid #cdd9ec;background:#fff;
+  border-radius:6px;padding:4px 7px;font-size:10px;font-weight:700;color:#41618f;cursor:pointer
 }
-.cms-section:hover .cms-section-edit{display:block}
-
-/* Frontend structure is preserved inside this mirror */
-#visualEditor{line-height:1.6;overflow-wrap:anywhere}
-#visualEditor section{margin-bottom:20px}
-#visualEditor h1,#visualEditor h2,#visualEditor h3,#visualEditor h4,
-#visualEditor h5,#visualEditor h6{line-height:1.25}
-#visualEditor p{line-height:1.65}
-#visualEditor img{max-width:100%;height:auto}
-#visualEditor a{color:#2563eb}
-
-/* TABLE STRUCTURE LOCK
-   Frontend CSS is allowed to provide typography, but cannot flatten a real table
-   inside the CMS editor. These rules intentionally override display changes. */
-#visualEditor table{
-  display:table!important;width:100%!important;max-width:100%;
-  border-collapse:collapse!important;border-spacing:0!important;margin:14px 0
-}
-#visualEditor caption{display:table-caption!important}
-#visualEditor thead{display:table-header-group!important}
-#visualEditor tbody{display:table-row-group!important}
-#visualEditor tfoot{display:table-footer-group!important}
-#visualEditor tr{display:table-row!important}
-#visualEditor th,#visualEditor td{
-  display:table-cell!important;border:1px solid #dce3ed;padding:9px 10px;
-  vertical-align:top!important;white-space:normal!important
-}
-#visualEditor th{background:#f5f8fc;text-align:left;font-weight:700}
-#visualEditor .table-wrapper,
-#visualEditor .programme-fee-table{overflow-x:auto;margin:14px 0}
-
-/* Keep link/navigation groups readable instead of running links together */
-#visualEditor .cms-link-group{
-  display:flex!important;flex-wrap:wrap!important;gap:6px 12px!important;
-  align-items:flex-start
-}
-#visualEditor .cms-link-group a{
-  display:inline-block!important;margin:0!important;padding:2px 0
-}
-
-/* Generic list preservation */
-#visualEditor ul,#visualEditor ol{padding-left:24px;margin:10px 0}
-#visualEditor li{display:list-item!important;margin:4px 0}
-
-/* Generic visual treatment for common frontend content boxes.
-   Original classes and HTML remain untouched. */
-#visualEditor .notice,
-#visualEditor .reality-box,
-#visualEditor .important-box,
-#visualEditor .info-box,
-#visualEditor .admission-update{
-  border:1px solid #d7e3f5;border-left:4px solid #2563eb;
-  border-radius:8px;padding:14px 16px;margin:16px 0;background:#f8fbff
-}
-#visualEditor .pro-box,
-#visualEditor .warning-box,
-#visualEditor .highlight-card,
-#visualEditor .programme-nav-card,
-#visualEditor .programme-card-details{
-  border:1px solid #dce3ed;border-radius:9px;padding:14px;margin:12px 0;background:#fff
-}
-#visualEditor .programme-nav-grid,
-#visualEditor .highlight-grid{
-  display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:14px 0
-}
-#visualEditor .faq-item{border:1px solid #dce3ed;border-radius:8px;padding:13px;margin:10px 0}
+.cms-section-edit:hover{background:#f6f9ff}
 
 /* Editable elements */
 .cms-editable{position:relative}
@@ -360,15 +207,40 @@ input,select{
 .preview-mode .editor-canvas{padding:0;box-shadow:none;width:100%;background:#fff}
 .preview-mode .editor-stage{padding:0;background:#fff;border:0}
 
-/* Compare content presentation */
-.compare-scroll .editor-canvas{box-shadow:none;padding:0;width:100%;min-height:100%}
+/* Compare mode */
+.compare-layout{
+  flex:1 1 auto;
+  min-height:0;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  padding:12px;
+  overflow:hidden;
+  background:#e9eef5;
+}
+.compare-pane{
+  min-width:0;min-height:0;border:1px solid var(--line);border-radius:10px;background:#fff;
+  overflow:hidden;display:flex;flex-direction:column
+}
+.compare-pane-title{
+  flex:0 0 auto;padding:10px 14px;border-bottom:1px solid var(--line);font-size:12px;font-weight:800;
+  color:#4a5b72;background:#f8fafc
+}
+.compare-scroll{
+  flex:1 1 auto;min-height:0;height:auto;overflow:auto;padding:16px;
+  overscroll-behavior:contain
+}
+.compare-scroll .editor-canvas{box-shadow:none;padding:0;width:100%}
 .compare-scroll .cms-section{padding:0;margin:0;border:0;background:transparent}
 .compare-scroll .cms-section-label,.compare-scroll .cms-section-edit{display:none!important}
 .compare-scroll .cms-editable{outline:0!important;cursor:default}
-.compare-scroll table{display:table!important;width:100%!important;border-collapse:collapse!important}
+.compare-scroll table{
+  display:table!important;width:100%!important;border-collapse:collapse!important
+}
 .compare-scroll tr{display:table-row!important}
-.compare-scroll th,.compare-scroll td{display:table-cell!important;border:1px solid #dce3ed;padding:9px 10px}
-
+.compare-scroll th,.compare-scroll td{
+  display:table-cell!important;border:1px solid #dce3ed;padding:9px 10px
+}
 
 /* SEO CENTRE */
 .seo-selector-grid{
@@ -420,8 +292,8 @@ input,select{
 .app{display:none}
 
 @media(max-width:1000px){
-  .compare-layout{grid-template-columns:1fr;overflow:auto}
-  .compare-pane{min-height:420px}
+  .compare-layout{grid-template-columns:1fr}
+  .compare-scroll{height:60vh}
 }
 @media(max-width:900px){
   .side{display:none}
@@ -433,12 +305,27 @@ input,select{
   .top,.editor-header{flex-direction:column}
   .top-actions,.editor-header-actions{justify-content:flex-start}
   .stats{grid-template-columns:1fr}
-  .editor-page{height:calc(100vh - 28px);min-height:480px}
   .editor-stage{padding:8px}
   .editor-canvas{padding:15px}
-  .editor-toolbar{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:thin}
   .mode-group{margin-left:0}
-  .compare-layout{padding:8px}
+}
+
+/* Editor responsive behaviour */
+@media (max-width:900px){
+  .editor-page{height:calc(100vh - 30px);min-height:560px}
+  .compare-layout{grid-template-columns:1fr}
+  .compare-pane{min-height:0}
+  .compare-scroll{height:auto}
+}
+@media (max-width:650px){
+  main{padding:16px}
+  .editor-page{margin-top:12px;height:calc(100vh - 20px);min-height:500px}
+  .editor-header{padding:12px;flex-direction:column}
+  .editor-header-actions{width:100%;justify-content:flex-start}
+  .editor-toolbar{gap:5px;padding:7px}
+  .mode-group{margin-left:0}
+  .editor-stage{padding:10px}
+  .editor-canvas{padding:18px}
 }
 </style>
 </head>
@@ -645,78 +532,72 @@ input,select{
     </section>
 
     <!-- STRUCTURED VISUAL EDITOR -->
-    <section id="editorView">
+    <section id="editorView" aria-hidden="true">
       <div class="editor-page">
-        <div class="editor-shell">
 
-          <!-- FIXED EDITOR HEADER -->
-          <div class="editor-header">
-            <div>
-              <div class="editor-title" id="editorTitle">Structured Visual Editor</div>
-              <div class="muted" id="editorSubtitle">
-                Structure Mirror: the frontend layout is preserved while content remains editable.
-              </div>
-            </div>
-
-            <div class="editor-header-actions">
-              <button class="btn" onclick="backToPages()">← Back</button>
-              <button class="btn" onclick="save()">Save Draft</button>
-              <button class="btn primary" onclick="publish()">Publish</button>
-            </div>
+        <!-- FIXED EDITOR HEADER -->
+        <div class="editor-header">
+          <div>
+            <div class="muted">STRUCTURE MIRROR EDITOR</div>
+            <h2 id="editorTitle">Select a page</h2>
+            <div class="muted" id="editorSubtitle">Edit the frontend structure directly from the CMS.</div>
           </div>
 
-          <!-- FIXED TOOLBAR -->
-          <div class="editor-toolbar" id="editorToolbar">
-            <button class="tool" type="button" onclick="cmd('bold')"><b>B</b></button>
-            <button class="tool" type="button" onclick="cmd('italic')"><i>I</i></button>
-            <button class="tool" type="button" onclick="cmd('insertUnorderedList')">• List</button>
-            <button class="tool" type="button" onclick="cmd('insertOrderedList')">1. List</button>
-            <button class="tool" type="button" onclick="cmd('createLink')">Link</button>
-
-            <button class="tool" type="button" onclick="openMediaModal('image')">🖼️ Image</button>
-            <button class="tool" type="button" onclick="openMediaModal('pdf')">📄 Official PDF</button>
-
-            <span class="toolbar-divider"></span>
-
-            <button class="tool" type="button" onclick="addTableRow()">+ Table Row</button>
-            <button class="tool" type="button" onclick="deleteTableRow()">− Table Row</button>
-
-            <div class="mode-group">
-              <button class="mode-btn active" id="editModeBtn" type="button" onclick="setEditorMode('edit')">Edit</button>
-              <button class="mode-btn" id="previewModeBtn" type="button" onclick="setEditorMode('preview')">Preview</button>
-              <button class="mode-btn" id="compareModeBtn" type="button" onclick="setEditorMode('compare')">Compare</button>
-            </div>
+          <div class="editor-header-actions">
+            <button class="btn" onclick="backToPages()">← Back</button>
+            <button class="btn" onclick="save()">Save Draft</button>
+            <button class="btn primary" onclick="publish()">Publish</button>
           </div>
-
-          <!-- EDIT / PREVIEW: ONLY THIS AREA SCROLLS -->
-          <div class="editor-stage" id="editorStage">
-            <div class="editor-canvas" id="editorCanvas">
-              <div id="visualEditor"></div>
-            </div>
-          </div>
-
-          <!-- COMPARE: EACH PANE SCROLLS INSIDE THE SAME BOX -->
-          <div class="compare-layout" id="compareStage" style="display:none">
-            <div class="compare-pane">
-              <div class="compare-pane-title">CMS EDITOR — Current Draft</div>
-              <div class="compare-scroll">
-                <div class="editor-canvas">
-                  <div id="compareEditor"></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="compare-pane">
-              <div class="compare-pane-title">FRONTEND STRUCTURE — Original Version</div>
-              <div class="compare-scroll">
-                <div class="editor-canvas">
-                  <div id="compareOriginal"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
         </div>
+
+        <!-- FIXED EDITOR TOOLBAR -->
+        <div class="editor-toolbar">
+          <button class="tool" onclick="cmd('bold')"><b>B</b></button>
+          <button class="tool" onclick="cmd('italic')"><i>I</i></button>
+          <button class="tool" onclick="cmd('insertUnorderedList')">• List</button>
+          <button class="tool" onclick="cmd('insertOrderedList')">1. List</button>
+          <button class="tool" onclick="cmd('createLink')">Link</button>
+          <button class="tool" onclick="openMediaModal('image')">🖼️ Image</button>
+          <button class="tool" onclick="openMediaModal('pdf')">📄 Official PDF</button>
+          <span class="toolbar-divider"></span>
+          <button class="tool" onclick="addTableRow()">+ Table Row</button>
+          <button class="tool" onclick="deleteTableRow()">− Table Row</button>
+
+          <div class="mode-group">
+            <button class="mode-btn active" id="editModeBtn" onclick="setEditorMode('edit')">Edit</button>
+            <button class="mode-btn" id="previewModeBtn" onclick="setEditorMode('preview')">Preview</button>
+            <button class="mode-btn" id="compareModeBtn" onclick="setEditorMode('compare')">Compare</button>
+          </div>
+        </div>
+
+        <!-- EDIT / PREVIEW: ONLY THIS AREA SCROLLS -->
+        <div class="editor-stage" id="editorStage">
+          <div class="editor-canvas" id="editorCanvas">
+            <div id="visualEditor"></div>
+          </div>
+        </div>
+
+        <!-- COMPARE: EACH PANE SCROLLS INDEPENDENTLY -->
+        <div class="compare-layout" id="compareStage" style="display:none">
+          <div class="compare-pane">
+            <div class="compare-pane-title">CMS EDITOR — Current Draft</div>
+            <div class="compare-scroll">
+              <div class="editor-canvas">
+                <div id="compareEditor"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="compare-pane">
+            <div class="compare-pane-title">FRONTEND STRUCTURE — Original Version</div>
+            <div class="compare-scroll">
+              <div class="editor-canvas">
+                <div id="compareOriginal"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </section>
   </main>
@@ -2672,14 +2553,20 @@ async function syncPages() {
 function showEditor(show) {
   $("mainTop").style.display = show ? "none" : "flex";
   $("editorView").style.display = show ? "block" : "none";
+  $("editorView").setAttribute("aria-hidden", show ? "false" : "true");
   document.body.classList.toggle("editor-open", show);
 
-  if (!show) {
+  if (show) {
+    ["dashboardView", "pagesView", "templatesView", "seoView", "historyView"].forEach((id) => {
+      $(id).style.display = "none";
+    });
+  } else {
     ["dashboardView", "pagesView", "templatesView", "seoView", "historyView"].forEach((id) => {
       $(id).style.display = "none";
     });
 
-    $(currentView + "View").style.display = "block";
+    const activeView = $(currentView + "View");
+    if (activeView) activeView.style.display = "block";
   }
 }
 
@@ -2698,7 +2585,6 @@ function backToPages() {
 async function showView(view) {
   currentView = view;
   current = null;
-  document.body.classList.remove("editor-open");
 
   const meta = {
     dashboard: ["Editorial Dashboard", "One workspace for existing and future college pages."],
@@ -2717,6 +2603,8 @@ async function showView(view) {
 
   $("mainTop").style.display = "flex";
   $("editorView").style.display = "none";
+  $("editorView").setAttribute("aria-hidden", "true");
+  document.body.classList.remove("editor-open");
 
   ["dashboardView", "pagesView", "templatesView", "seoView", "historyView"].forEach((id) => {
     $(id).style.display = "none";
@@ -2759,7 +2647,6 @@ async function signOut() {
   }
 
   authenticatedUser = null;
-  document.body.classList.remove("editor-open");
   current = null;
   currentCollegeId = "";
   currentPageId = "";
