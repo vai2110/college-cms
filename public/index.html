@@ -23,6 +23,12 @@
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+
+/* When an article is open, scrolling is contained by the editor shell. */
+body.editor-open{overflow:hidden}
+body.editor-open .app{height:100vh;min-height:100vh}
+body.editor-open main{height:100vh;min-height:0;overflow:hidden}
+
 button,input,select{font:inherit}
 code{background:#f1f5f9;padding:2px 5px;border-radius:4px}
 .app{display:flex;min-height:100vh}
@@ -100,75 +106,72 @@ input,select{
    STRUCTURED VISUAL EDITOR
 ================================ */
 #editorView{display:none}
-.editor-page{margin-top:20px}
 
-/* STICKY EDITOR HEADER */
+/*
+   EDITOR WORKSPACE
+   The editor is a self-contained viewport. The browser/page does not
+   scroll while an article is open; only the content area inside this box
+   scrolls. This keeps the toolbar permanently visible.
+*/
+.editor-page{
+  margin-top:20px;
+  height:calc(100vh - 48px);
+  min-height:520px;
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+}
+
+.editor-shell{
+  flex:1;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  background:#eef2f7;
+  border:1px solid #cfd8e6;
+  border-radius:14px;
+  box-shadow:0 10px 30px rgba(20,35,60,.10);
+}
+
 .editor-header{
-  position:sticky;
-  top:0;
-  z-index:100;
+  flex:0 0 auto;
+  position:relative;
+  z-index:20;
   background:#fff;
-  border:1px solid var(--line);
-  border-radius:12px;
-  padding:17px;
+  border:0;
+  border-bottom:1px solid var(--line);
+  border-radius:0;
+  padding:14px 16px;
   display:flex;
   justify-content:space-between;
   align-items:flex-start;
   gap:16px;
-  box-shadow:0 4px 14px rgba(20,35,60,.10);
 }
 
 .editor-header-actions{
   display:flex;
   gap:8px;
   flex-wrap:wrap;
-  justify-content:flex-end
+  justify-content:flex-end;
 }
 
-.editor-title{
-  font-size:20px;
-  font-weight:800
-}
-
-/* STICKY EDITOR TOOLBAR */
+/* Toolbar is part of the fixed top area of the editor shell. */
 .editor-toolbar{
-  position:sticky;
-  top:112px;
-  z-index:99;
-
-  margin:14px 0;
+  flex:0 0 auto;
+  position:relative;
+  z-index:19;
+  margin:0;
   background:#fff;
-  border:1px solid var(--line);
-  border-radius:10px;
-
-  padding:9px;
+  border:0;
+  border-bottom:1px solid #cfd8e6;
+  border-radius:0;
+  padding:10px;
   display:flex;
   gap:7px;
   align-items:center;
   flex-wrap:wrap;
-
-  box-shadow:0 4px 14px rgba(20,35,60,.10)
-}
-
-/* MEDIA MODAL */
-.media-dialog{
-  width:min(620px,92vw)
-}
-
-.media-file-input{
-  padding:9px;
-  background:#fff
-}
-
-.media-note{
-  margin-top:12px;
-  padding:12px;
-  border:1px solid #dce3ed;
-  border-radius:8px;
-  background:#f8fbff;
-  color:#687386;
-  font-size:12px;
-  line-height:1.5
+  box-shadow:0 3px 10px rgba(20,35,60,.07);
 }
 
 .tool{
@@ -176,631 +179,266 @@ input,select{
   border:1px solid var(--line);
   background:#fff;
   border-radius:6px;
-  cursor:pointer
-}
-
-.tool:hover{background:#f8fafc}
-
-.toolbar-divider{
-  height:26px;
-  width:1px;
-  background:var(--line);
-  margin:0 2px
-}
-
-.mode-group{
-  margin-left:auto;
-  display:flex;
-  border:1px solid var(--line);
-  border-radius:7px;
-  overflow:hidden
-}
-
-.mode-btn{
-  border:0;
-  background:#fff;
-  padding:8px 11px;
-  font-weight:700;
   cursor:pointer;
-  font-size:12px
+  white-space:nowrap;
 }
+.tool:hover{background:#f8fafc}
+.toolbar-divider{height:26px;width:1px;background:var(--line);margin:0 2px}
+.mode-group{margin-left:auto;display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.mode-btn{border:0;background:#fff;padding:8px 11px;font-weight:700;cursor:pointer;font-size:12px}
+.mode-btn.active{background:#eaf1ff;color:var(--blue)}
 
-.mode-btn.active{
-  background:#eaf1ff;
-  color:var(--blue)
-}
-
+/*
+   This is the ONLY vertical scroll container for Edit/Preview.
+   The header + toolbar stay visible because they are outside this area.
+*/
 .editor-stage{
+  flex:1 1 auto;
+  min-height:0;
+  overflow:auto;
+  overscroll-behavior:contain;
   background:#e9eef5;
-  border:1px solid var(--line);
-  border-radius:12px;
+  border:0;
   padding:18px;
-  min-height:650px
+  scrollbar-gutter:stable;
 }
 
 .editor-canvas{
   width:min(1100px,100%);
   margin:0 auto;
   background:var(--editor-bg);
+  border:1px solid #d9e1ec;
   border-radius:8px;
   box-shadow:0 8px 28px rgba(20,35,60,.08);
-  min-height:600px;
-  padding:28px
+  min-height:calc(100% - 2px);
+  padding:28px;
 }
 
-/* Structure mirror wrappers are CMS-only and never saved */
-.cms-section{
-  position:relative;
-  margin:0 0 18px;
-  padding:30px 16px 16px;
-  border:1px dashed transparent;
-  border-radius:10px;
-  transition:.15s
-}
-
-.cms-section:hover{
-  border-color:#9db7e9;
-  background:#fbfdff
-}
-
-.cms-section-label{
-  position:absolute;
-  left:12px;
-  top:8px;
-  font-size:10px;
-  font-weight:800;
-  letter-spacing:.05em;
-  color:#53719f;
-  text-transform:uppercase;
-  display:flex;
-  gap:7px;
-  align-items:center
-}
-
-.cms-section-label span{
-  background:#eef4ff;
-  border:1px solid #d8e5fb;
-  padding:3px 6px;
-  border-radius:12px;
-  font-size:9px
-}
-
-.cms-section-edit{
-  position:absolute;
-  right:10px;
-  top:8px;
-  padding:5px 8px;
-  border:1px solid var(--line);
-  border-radius:6px;
-  background:#fff;
-  font-size:11px;
-  font-weight:700;
-  cursor:pointer;
-  display:none
-}
-
-.cms-section:hover .cms-section-edit{
-  display:block
-}
-
-/* Frontend structure is preserved inside this mirror */
-#visualEditor{
-  line-height:1.6;
-  overflow-wrap:anywhere
-}
-
-#visualEditor section{
-  margin-bottom:20px
-}
-
-#visualEditor h1,
-#visualEditor h2,
-#visualEditor h3,
-#visualEditor h4,
-#visualEditor h5,
-#visualEditor h6{
-  line-height:1.25
-}
-
-#visualEditor p{
-  line-height:1.65
-}
-
-#visualEditor img{
-  max-width:100%;
-  height:auto
-}
-
-#visualEditor a{
-  color:#2563eb
-}
-
-/* TABLE STRUCTURE LOCK */
-#visualEditor table{
-  display:table!important;
-  width:100%!important;
-  max-width:100%;
-  border-collapse:collapse!important;
-  border-spacing:0!important;
-  margin:14px 0
-}
-
-#visualEditor caption{
-  display:table-caption!important
-}
-
-#visualEditor thead{
-  display:table-header-group!important
-}
-
-#visualEditor tbody{
-  display:table-row-group!important
-}
-
-#visualEditor tfoot{
-  display:table-footer-group!important
-}
-
-#visualEditor tr{
-  display:table-row!important
-}
-
-#visualEditor th,
-#visualEditor td{
-  display:table-cell!important;
-  border:1px solid #dce3ed;
-  padding:9px 10px;
-  vertical-align:top!important;
-  white-space:normal!important
-}
-
-#visualEditor th{
-  background:#f5f8fc;
-  text-align:left;
-  font-weight:700
-}
-
-#visualEditor .table-wrapper,
-#visualEditor .programme-fee-table{
-  overflow-x:auto;
-  margin:14px 0
-}
-
-/* Keep link/navigation groups readable */
-#visualEditor .cms-link-group{
-  display:flex!important;
-  flex-wrap:wrap!important;
-  gap:6px 12px!important;
-  align-items:flex-start
-}
-
-#visualEditor .cms-link-group a{
-  display:inline-block!important;
-  margin:0!important;
-  padding:2px 0
-}
-
-/* Generic list preservation */
-#visualEditor ul,
-#visualEditor ol{
-  padding-left:24px;
-  margin:10px 0
-}
-
-#visualEditor li{
-  display:list-item!important;
-  margin:4px 0
-}
-
-/* Common frontend content boxes */
-#visualEditor .notice,
-#visualEditor .reality-box,
-#visualEditor .important-box,
-#visualEditor .info-box,
-#visualEditor .admission-update{
-  border:1px solid #d7e3f5;
-  border-left:4px solid #2563eb;
-  border-radius:8px;
-  padding:14px 16px;
-  margin:16px 0;
-  background:#f8fbff
-}
-
-#visualEditor .pro-box,
-#visualEditor .warning-box,
-#visualEditor .highlight-card,
-#visualEditor .programme-nav-card,
-#visualEditor .programme-card-details{
-  border:1px solid #dce3ed;
-  border-radius:9px;
-  padding:14px;
-  margin:12px 0;
-  background:#fff
-}
-
-#visualEditor .programme-nav-grid,
-#visualEditor .highlight-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-  gap:12px;
-  margin:14px 0
-}
-
-#visualEditor .faq-item{
-  border:1px solid #dce3ed;
-  border-radius:8px;
-  padding:13px;
-  margin:10px 0
-}
-
-/* Editable elements */
-.cms-editable{
-  position:relative
-}
-
-.cms-editable:hover{
-  outline:2px solid rgba(37,99,235,.28);
-  outline-offset:3px;
-  border-radius:4px;
-  cursor:text
-}
-
-.cms-editable[contenteditable="true"]:focus{
-  outline:2px solid var(--blue);
-  outline-offset:3px;
-  background:#fffef5
-}
-
-.cms-table-cell:hover{
-  background:#f8fbff
-}
-
-.cms-table-cell[contenteditable="true"]:focus{
-  background:#fffef5
-}
-
-.cms-locked{
-  pointer-events:none
-}
-
-/* Preview mode */
-.preview-mode .cms-section{
-  padding:0;
-  margin-bottom:0;
-  border:0;
-  background:transparent
-}
-
-.preview-mode .cms-section-label,
-.preview-mode .cms-section-edit{
-  display:none!important
-}
-
-.preview-mode .cms-editable{
-  outline:0!important;
-  cursor:default
-}
-
-.preview-mode .editor-canvas{
-  padding:0;
-  box-shadow:none;
-  width:100%;
-  background:#fff
-}
-
-.preview-mode .editor-stage{
-  padding:0;
-  background:#fff;
-  border:0
-}
-
-/* Compare mode */
+/* Compare mode also stays completely inside the editor shell. */
 .compare-layout{
+  flex:1 1 auto;
+  min-height:0;
   display:grid;
   grid-template-columns:1fr 1fr;
-  gap:16px
+  gap:12px;
+  padding:12px;
+  overflow:hidden;
+  background:#e9eef5;
 }
-
 .compare-pane{
   min-width:0;
-  border:1px solid var(--line);
+  min-height:0;
+  border:1px solid #cfd8e6;
   border-radius:10px;
   background:#fff;
-  overflow:hidden
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
 }
-
 .compare-pane-title{
+  flex:0 0 auto;
   padding:10px 14px;
   border-bottom:1px solid var(--line);
   font-size:12px;
   font-weight:800;
   color:#4a5b72;
-  background:#f8fafc
+  background:#f8fafc;
 }
-
 .compare-scroll{
-  height:72vh;
+  flex:1 1 auto;
+  min-height:0;
   overflow:auto;
-  padding:16px
+  overscroll-behavior:contain;
+  padding:16px;
+  scrollbar-gutter:stable;
 }
 
-.compare-scroll .editor-canvas{
-  box-shadow:none;
-  padding:0;
-  width:100%
+/* Structure mirror wrappers are CMS-only and never saved */
+.cms-section{
+  position:relative;margin:0 0 18px;padding:30px 16px 16px;
+  border:1px dashed transparent;border-radius:10px;transition:.15s
+}
+.cms-section:hover{border-color:#9db7e9;background:#fbfdff}
+.cms-section-label{
+  position:absolute;left:12px;top:8px;font-size:10px;font-weight:800;
+  letter-spacing:.05em;color:#53719f;text-transform:uppercase;
+  display:flex;gap:7px;align-items:center
+}
+.cms-section-label span{
+  background:#eef4ff;border:1px solid #d8e5fb;padding:3px 6px;border-radius:12px;
+  font-size:9px
+}
+.cms-section-edit{
+  position:absolute;right:10px;top:8px;padding:5px 8px;border:1px solid var(--line);
+  border-radius:6px;background:#fff;font-size:11px;font-weight:700;cursor:pointer;display:none
+}
+.cms-section:hover .cms-section-edit{display:block}
+
+/* Frontend structure is preserved inside this mirror */
+#visualEditor{line-height:1.6;overflow-wrap:anywhere}
+#visualEditor section{margin-bottom:20px}
+#visualEditor h1,#visualEditor h2,#visualEditor h3,#visualEditor h4,
+#visualEditor h5,#visualEditor h6{line-height:1.25}
+#visualEditor p{line-height:1.65}
+#visualEditor img{max-width:100%;height:auto}
+#visualEditor a{color:#2563eb}
+
+/* TABLE STRUCTURE LOCK
+   Frontend CSS is allowed to provide typography, but cannot flatten a real table
+   inside the CMS editor. These rules intentionally override display changes. */
+#visualEditor table{
+  display:table!important;width:100%!important;max-width:100%;
+  border-collapse:collapse!important;border-spacing:0!important;margin:14px 0
+}
+#visualEditor caption{display:table-caption!important}
+#visualEditor thead{display:table-header-group!important}
+#visualEditor tbody{display:table-row-group!important}
+#visualEditor tfoot{display:table-footer-group!important}
+#visualEditor tr{display:table-row!important}
+#visualEditor th,#visualEditor td{
+  display:table-cell!important;border:1px solid #dce3ed;padding:9px 10px;
+  vertical-align:top!important;white-space:normal!important
+}
+#visualEditor th{background:#f5f8fc;text-align:left;font-weight:700}
+#visualEditor .table-wrapper,
+#visualEditor .programme-fee-table{overflow-x:auto;margin:14px 0}
+
+/* Keep link/navigation groups readable instead of running links together */
+#visualEditor .cms-link-group{
+  display:flex!important;flex-wrap:wrap!important;gap:6px 12px!important;
+  align-items:flex-start
+}
+#visualEditor .cms-link-group a{
+  display:inline-block!important;margin:0!important;padding:2px 0
 }
 
-.compare-scroll .cms-section{
-  padding:0;
-  margin:0;
-  border:0;
-  background:transparent
-}
+/* Generic list preservation */
+#visualEditor ul,#visualEditor ol{padding-left:24px;margin:10px 0}
+#visualEditor li{display:list-item!important;margin:4px 0}
 
-.compare-scroll .cms-section-label,
-.compare-scroll .cms-section-edit{
-  display:none!important
+/* Generic visual treatment for common frontend content boxes.
+   Original classes and HTML remain untouched. */
+#visualEditor .notice,
+#visualEditor .reality-box,
+#visualEditor .important-box,
+#visualEditor .info-box,
+#visualEditor .admission-update{
+  border:1px solid #d7e3f5;border-left:4px solid #2563eb;
+  border-radius:8px;padding:14px 16px;margin:16px 0;background:#f8fbff
 }
+#visualEditor .pro-box,
+#visualEditor .warning-box,
+#visualEditor .highlight-card,
+#visualEditor .programme-nav-card,
+#visualEditor .programme-card-details{
+  border:1px solid #dce3ed;border-radius:9px;padding:14px;margin:12px 0;background:#fff
+}
+#visualEditor .programme-nav-grid,
+#visualEditor .highlight-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:14px 0
+}
+#visualEditor .faq-item{border:1px solid #dce3ed;border-radius:8px;padding:13px;margin:10px 0}
 
-.compare-scroll .cms-editable{
-  outline:0!important;
-  cursor:default
+/* Editable elements */
+.cms-editable{position:relative}
+.cms-editable:hover{
+  outline:2px solid rgba(37,99,235,.28);
+  outline-offset:3px;border-radius:4px;cursor:text
 }
+.cms-editable[contenteditable="true"]:focus{
+  outline:2px solid var(--blue);outline-offset:3px;background:#fffef5
+}
+.cms-table-cell:hover{background:#f8fbff}
+.cms-table-cell[contenteditable="true"]:focus{background:#fffef5}
+.cms-locked{pointer-events:none}
 
-.compare-scroll table{
-  display:table!important;
-  width:100%!important;
-  border-collapse:collapse!important
-}
+/* Preview mode removes editorial markings */
+.preview-mode .cms-section{padding:0;margin-bottom:0;border:0;background:transparent}
+.preview-mode .cms-section-label,
+.preview-mode .cms-section-edit{display:none!important}
+.preview-mode .cms-editable{outline:0!important;cursor:default}
+.preview-mode .editor-canvas{padding:0;box-shadow:none;width:100%;background:#fff}
+.preview-mode .editor-stage{padding:0;background:#fff;border:0}
 
-.compare-scroll tr{
-  display:table-row!important
-}
+/* Compare content presentation */
+.compare-scroll .editor-canvas{box-shadow:none;padding:0;width:100%;min-height:100%}
+.compare-scroll .cms-section{padding:0;margin:0;border:0;background:transparent}
+.compare-scroll .cms-section-label,.compare-scroll .cms-section-edit{display:none!important}
+.compare-scroll .cms-editable{outline:0!important;cursor:default}
+.compare-scroll table{display:table!important;width:100%!important;border-collapse:collapse!important}
+.compare-scroll tr{display:table-row!important}
+.compare-scroll th,.compare-scroll td{display:table-cell!important;border:1px solid #dce3ed;padding:9px 10px}
 
-.compare-scroll th,
-.compare-scroll td{
-  display:table-cell!important;
-  border:1px solid #dce3ed;
-  padding:9px 10px
-}
 
 /* SEO CENTRE */
 .seo-selector-grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:14px;
-  margin-top:18px
+  display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px
 }
-
-.seo-form{
-  margin-top:18px;
-  display:grid;
-  gap:15px
-}
-
-.seo-field{
-  display:grid;
-  gap:6px
-}
-
+.seo-form{margin-top:18px;display:grid;gap:15px}
+.seo-field{display:grid;gap:6px}
 .seo-field textarea{
-  width:100%;
-  min-height:104px;
-  padding:11px;
-  border:1px solid var(--line);
-  border-radius:8px;
-  background:#fff;
-  font:inherit;
-  resize:vertical
+  width:100%;min-height:104px;padding:11px;border:1px solid var(--line);border-radius:8px;
+  background:#fff;font:inherit;resize:vertical
 }
-
-.seo-field input:focus,
-.seo-field textarea:focus,
-.seo-field select:focus{
-  outline:2px solid rgba(37,99,235,.18);
-  border-color:#8db0ee
+.seo-field input:focus,.seo-field textarea:focus,.seo-field select:focus{
+  outline:2px solid rgba(37,99,235,.18);border-color:#8db0ee
 }
-
-.seo-helper{
-  font-size:11px;
-  color:var(--muted)
-}
-
-.seo-count{
-  font-size:11px;
-  color:var(--muted);
-  text-align:right
-}
-
-.seo-actions{
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
-  margin-top:4px
-}
-
+.seo-helper{font-size:11px;color:var(--muted)}
+.seo-count{font-size:11px;color:var(--muted);text-align:right}
+.seo-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
 .seo-preview{
-  margin-top:20px;
-  border:1px solid var(--line);
-  border-radius:10px;
-  padding:18px;
-  background:#fbfdff
+  margin-top:20px;border:1px solid var(--line);border-radius:10px;padding:18px;background:#fbfdff
 }
+.seo-preview-label{font-size:11px;font-weight:800;color:#667085;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
+.seo-preview-url{font-size:13px;color:#168c60;margin-bottom:5px;overflow-wrap:anywhere}
+.seo-preview-title{font-size:20px;color:#1a0dab;line-height:1.35;margin-bottom:6px}
+.seo-preview-description{font-size:13px;color:#4b5563;line-height:1.55}
+@media(max-width:700px){.seo-selector-grid{grid-template-columns:1fr}}
 
-.seo-preview-label{
-  font-size:11px;
-  font-weight:800;
-  color:#667085;
-  text-transform:uppercase;
-  letter-spacing:.05em;
-  margin-bottom:10px
-}
-
-.seo-preview-url{
-  font-size:13px;
-  color:#168c60;
-  margin-bottom:5px;
-  overflow-wrap:anywhere
-}
-
-.seo-preview-title{
-  font-size:20px;
-  color:#1a0dab;
-  line-height:1.35;
-  margin-bottom:6px
-}
-
-.seo-preview-description{
-  font-size:13px;
-  color:#4b5563;
-  line-height:1.55
-}
-
-@media(max-width:700px){
-  .seo-selector-grid{
-    grid-template-columns:1fr
-  }
-}
-
-.history-row{
-  padding:13px 0;
-  border-bottom:1px solid var(--line)
-}
-
-.history-row:last-child{
-  border-bottom:0
-}
+.history-row{padding:13px 0;border-bottom:1px solid var(--line)}
+.history-row:last-child{border-bottom:0}
 
 /* LOGIN SCREEN */
 #loginView{
-  min-height:100vh;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:24px;
-  background:linear-gradient(
-    135deg,
-    #eef4ff 0%,
-    #f6f8fc 55%,
-    #e9f0fb 100%
-  )
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  padding:24px;background:linear-gradient(135deg,#eef4ff 0%,#f6f8fc 55%,#e9f0fb 100%);
 }
-
 .login-card{
-  width:min(430px,100%);
-  background:#fff;
-  border:1px solid var(--line);
-  border-radius:16px;
-  padding:32px;
-  box-shadow:0 18px 45px rgba(16,42,86,.12)
+  width:min(430px,100%);background:#fff;border:1px solid var(--line);
+  border-radius:16px;padding:32px;box-shadow:0 18px 45px rgba(16,42,86,.12)
 }
-
-.login-brand{
-  font-size:26px;
-  font-weight:800;
-  color:var(--nav);
-  margin-bottom:8px
-}
-
-.login-brand span{
-  color:var(--blue)
-}
-
-.login-card h1{
-  font-size:24px;
-  margin:22px 0 6px
-}
-
+.login-brand{font-size:26px;font-weight:800;color:var(--nav);margin-bottom:8px}
+.login-brand span{color:var(--blue)}
+.login-card h1{font-size:24px;margin:22px 0 6px}
 .login-error{
-  display:none;
-  margin-top:14px;
-  padding:10px 12px;
-  border-radius:8px;
-  background:#fff4f1;
-  border:1px solid #f1c5ba;
-  color:var(--danger);
-  font-size:13px
+  display:none;margin-top:14px;padding:10px 12px;border-radius:8px;
+  background:#fff4f1;border:1px solid #f1c5ba;color:var(--danger);font-size:13px
 }
-
-.login-error.show{
-  display:block
-}
-
-.login-card .btn{
-  width:100%;
-  margin-top:18px
-}
-
-.login-card input{
-  margin-bottom:14px
-}
-
-.app{
-  display:none
-}
+.login-error.show{display:block}
+.login-card .btn{width:100%;margin-top:18px}
+.login-card input{margin-bottom:14px}
+.app{display:none}
 
 @media(max-width:1000px){
-  .compare-layout{
-    grid-template-columns:1fr
-  }
-
-  .compare-scroll{
-    height:60vh
-  }
+  .compare-layout{grid-template-columns:1fr;overflow:auto}
+  .compare-pane{min-height:420px}
 }
-
 @media(max-width:900px){
-  .side{
-    display:none
-  }
-
-  main{
-    padding:20px
-  }
-
-  .stats{
-    grid-template-columns:repeat(2,1fr)
-  }
-
-  .selector-grid{
-    grid-template-columns:1fr
-  }
+  .side{display:none}
+  main{padding:20px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .selector-grid{grid-template-columns:1fr}
 }
-
 @media(max-width:600px){
-  .top,
-  .editor-header{
-    flex-direction:column
-  }
-
-  .top-actions,
-  .editor-header-actions{
-    justify-content:flex-start
-  }
-
-  .stats{
-    grid-template-columns:1fr
-  }
-
-  .editor-stage{
-    padding:8px
-  }
-
-  .editor-canvas{
-    padding:15px
-  }
-
-  .mode-group{
-    margin-left:0
-  }
-
-  .editor-toolbar{
-    top:190px
-  }
-
-  .media-dialog{
-    width:min(620px,94vw)
-  }
+  .top,.editor-header{flex-direction:column}
+  .top-actions,.editor-header-actions{justify-content:flex-start}
+  .stats{grid-template-columns:1fr}
+  .editor-page{height:calc(100vh - 28px);min-height:480px}
+  .editor-stage{padding:8px}
+  .editor-canvas{padding:15px}
+  .editor-toolbar{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:thin}
+  .mode-group{margin-left:0}
+  .compare-layout{padding:8px}
 }
 </style>
 </head>
@@ -814,1072 +452,372 @@ input,select{
     <div class="muted">Secure editorial workspace</div>
 
     <h1>Sign in</h1>
-    <div class="muted">
-      Use the CMS username and password configured on your server.
-    </div>
+    <div class="muted">Use the CMS username and password configured on your server.</div>
 
     <form id="loginForm" onsubmit="signIn(event)">
-      <label for="loginUsername" style="margin-top:22px">
-        Username
-      </label>
+      <label for="loginUsername" style="margin-top:22px">Username</label>
+      <input id="loginUsername" name="username" autocomplete="username" required placeholder="Enter username">
 
-      <input
-        id="loginUsername"
-        name="username"
-        autocomplete="username"
-        required
-        placeholder="Enter username"
-      >
-
-      <label for="loginPassword">
-        Password
-      </label>
-
-      <input
-        id="loginPassword"
-        name="password"
-        type="password"
-        autocomplete="current-password"
-        required
-        placeholder="Enter password"
-      >
+      <label for="loginPassword">Password</label>
+      <input id="loginPassword" name="password" type="password" autocomplete="current-password" required placeholder="Enter password">
 
       <div id="loginError" class="login-error"></div>
-
-      <button
-        id="loginBtn"
-        class="btn primary"
-        type="submit"
-      >
-        Sign in to CMS
-      </button>
+      <button id="loginBtn" class="btn primary" type="submit">Sign in to CMS</button>
     </form>
   </div>
 </section>
 
 <div class="app" id="app">
-
   <aside class="side">
-    <div class="brand">
-      College<span>CMS</span>
-    </div>
-
-    <button
-      class="nav active"
-      data-view="dashboard"
-      onclick="showView('dashboard')"
-    >
-      Dashboard
-    </button>
-
-    <button
-      class="nav"
-      data-view="pages"
-      onclick="showView('pages')"
-    >
-      Content Pages
-    </button>
-
-    <button
-      class="nav"
-      data-view="templates"
-      onclick="showView('templates')"
-    >
-      Templates
-    </button>
-
-    <button
-      class="nav"
-      data-view="seo"
-      onclick="showView('seo')"
-    >
-      SEO Centre
-    </button>
-
-    <button
-      class="nav"
-      data-view="history"
-      onclick="showView('history')"
-    >
-      Publish History
-    </button>
+    <div class="brand">College<span>CMS</span></div>
+    <button class="nav active" data-view="dashboard" onclick="showView('dashboard')">Dashboard</button>
+    <button class="nav" data-view="pages" onclick="showView('pages')">Content Pages</button>
+    <button class="nav" data-view="templates" onclick="showView('templates')">Templates</button>
+    <button class="nav" data-view="seo" onclick="showView('seo')">SEO Centre</button>
+    <button class="nav" data-view="history" onclick="showView('history')">Publish History</button>
   </aside>
 
   <main>
-
     <div class="top" id="mainTop">
-
       <div>
-        <h1 id="viewTitle">
-          Editorial Dashboard
-        </h1>
-
-        <div
-          class="muted"
-          id="viewSubtitle"
-        >
-          One workspace for existing and future college pages.
-        </div>
+        <h1 id="viewTitle">Editorial Dashboard</h1>
+        <div class="muted" id="viewSubtitle">One workspace for existing and future college pages.</div>
       </div>
 
       <div class="top-actions">
-
-        <button
-          class="btn"
-          id="syncBtn"
-          onclick="syncPages()"
-        >
-          ↻ Sync Website Pages
-        </button>
-
-        <button
-          class="btn"
-          onclick="openModal('college')"
-        >
-          + Add College
-        </button>
-
-        <button
-          class="btn primary"
-          onclick="openModal('page')"
-        >
-          + Create Page
-        </button>
-
-        <button
-          class="btn"
-          onclick="signOut()"
-        >
-          Sign out
-        </button>
-
+        <button class="btn" id="syncBtn" onclick="syncPages()">↻ Sync Website Pages</button>
+        <button class="btn" onclick="openModal('college')">+ Add College</button>
+        <button class="btn primary" onclick="openModal('page')">+ Create Page</button>
+        <button class="btn" onclick="signOut()">Sign out</button>
       </div>
     </div>
 
-    <div
-      class="notice"
-      id="notice"
-    ></div>
+    <div class="notice" id="notice"></div>
 
     <!-- DASHBOARD -->
     <section id="dashboardView">
-
       <div class="stats">
-
-        <div class="card">
-          <div class="muted">
-            College Pages
-          </div>
-          <div
-            id="collegePageCount"
-            class="num"
-          >
-            —
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="muted">
-            Course Pages
-          </div>
-          <div
-            id="coursePageCount"
-            class="num"
-          >
-            —
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="muted">
-            Exam Pages
-          </div>
-          <div
-            id="examPageCount"
-            class="num"
-          >
-            —
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="muted">
-            Placement Pages
-          </div>
-          <div
-            id="placementPageCount"
-            class="num"
-          >
-            —
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="muted">
-            Total Pages
-          </div>
-          <div
-            id="pageCount"
-            class="num"
-          >
-            —
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="muted">
-            Live Pages
-          </div>
-          <div
-            id="liveCount"
-            class="num"
-          >
-            —
-          </div>
-        </div>
-
+        <div class="card"><div class="muted">College Pages</div><div id="collegePageCount" class="num">—</div></div>
+        <div class="card"><div class="muted">Course Pages</div><div id="coursePageCount" class="num">—</div></div>
+        <div class="card"><div class="muted">Exam Pages</div><div id="examPageCount" class="num">—</div></div>
+        <div class="card"><div class="muted">Placement Pages</div><div id="placementPageCount" class="num">—</div></div>
+        <div class="card"><div class="muted">Total Pages</div><div id="pageCount" class="num">—</div></div>
+        <div class="card"><div class="muted">Live Pages</div><div id="liveCount" class="num">—</div></div>
       </div>
 
       <section class="card panel">
+        <h2>Pages</h2>
+        <div class="muted">Select a college and then select a page to open it in the Structure Mirror editor.</div>
 
-        <h2>
-          Pages
-        </h2>
-
-        <div class="muted">
-          Select a college and then select a page to open it in the Structure Mirror editor.
-        </div>
-
-        <div
-          class="selector-grid"
-          style="margin-top:18px"
-        >
-
+        <div class="selector-grid" style="margin-top:18px">
           <div>
-
-            <label for="collegeSelect">
-              Select College
-            </label>
-
-            <select
-              id="collegeSelect"
-              onchange="onCollegeChange()"
-            >
-              <option value="">
-                Select a college
-              </option>
+            <label for="collegeSelect">Select College</label>
+            <select id="collegeSelect" onchange="onCollegeChange()">
+              <option value="">Select a college</option>
             </select>
-
           </div>
 
           <div>
-
-            <label for="pageSelect">
-              Select Page
-            </label>
-
-            <select
-              id="pageSelect"
-              onchange="onPageChange()"
-              disabled
-            >
-              <option value="">
-                Select a page
-              </option>
+            <label for="pageSelect">Select Page</label>
+            <select id="pageSelect" onchange="onPageChange()" disabled>
+              <option value="">Select a page</option>
             </select>
-
           </div>
 
-          <button
-            class="btn primary"
-            id="editSelectedBtn"
-            onclick="editSelectedPage()"
-            disabled
-          >
-            Open Editor
-          </button>
-
+          <button class="btn primary" id="editSelectedBtn" onclick="editSelectedPage()" disabled>Open Editor</button>
         </div>
-
       </section>
 
       <section class="card panel">
-
-        <h2>
-          Available Pages
-        </h2>
-
-        <div class="muted">
-          Pages for the selected college will appear below.
+        <h2>Available Pages</h2>
+        <div class="muted">Pages for the selected college will appear below.</div>
+        <div class="page-list" id="pageList">
+          <div class="empty">Select a college to view its pages.</div>
         </div>
-
-        <div
-          class="page-list"
-          id="pageList"
-        >
-          <div class="empty">
-            Select a college to view its pages.
-          </div>
-        </div>
-
       </section>
-
     </section>
 
     <!-- PAGES -->
-    <section
-      id="pagesView"
-      style="display:none"
-    >
-
+    <section id="pagesView" style="display:none">
       <div class="card panel">
-
-        <h2>
-          All Content Pages
-        </h2>
-
-        <div class="muted">
-          College, course, exam and placement pages in one organised list.
-        </div>
-
-        <div
-          id="allPagesList"
-          class="page-list"
-        ></div>
-
+        <h2>All Content Pages</h2>
+        <div class="muted">College, course, exam and placement pages in one organised list.</div>
+        <div id="allPagesList" class="page-list"></div>
       </div>
-
     </section>
 
     <!-- TEMPLATES -->
-    <section
-      id="templatesView"
-      style="display:none"
-    >
-
+    <section id="templatesView" style="display:none">
       <div class="card panel">
-
-        <h2>
-          Templates
-        </h2>
-
-        <div class="muted">
-          New pages use templates from your
-          <code>templates</code>
-          folder.
-        </div>
-
+        <h2>Templates</h2>
+        <div class="muted">New pages use templates from your <code>templates</code> folder.</div>
         <div class="page-list">
-
-          <div class="page">
-            <b>Overview</b>
-            <div class="muted">
-              Overview page structure.
-            </div>
-          </div>
-
-          <div class="page">
-            <b>Admission</b>
-            <div class="muted">
-              Admission page structure.
-            </div>
-          </div>
-
-          <div class="page">
-            <b>Courses &amp; Fees</b>
-            <div class="muted">
-              Courses and fees page structure.
-            </div>
-          </div>
-
-          <div class="page">
-            <b>Placement</b>
-            <div class="muted">
-              Placement page structure.
-            </div>
-          </div>
-
+          <div class="page"><b>Overview</b><div class="muted">Overview page structure.</div></div>
+          <div class="page"><b>Admission</b><div class="muted">Admission page structure.</div></div>
+          <div class="page"><b>Courses & Fees</b><div class="muted">Courses and fees page structure.</div></div>
+          <div class="page"><b>Placement</b><div class="muted">Placement page structure.</div></div>
         </div>
-
       </div>
-
     </section>
 
     <!-- SEO -->
-    <section
-      id="seoView"
-      style="display:none"
-    >
-
+    <section id="seoView" style="display:none">
       <section class="card panel">
-
-        <h2>
-          Page SEO Manager
-        </h2>
-
-        <div class="muted">
-          Select a college and page to edit its SEO information independently from the content editor.
-        </div>
+        <h2>Page SEO Manager</h2>
+        <div class="muted">Select a college and page to edit its SEO information independently from the content editor.</div>
 
         <div class="seo-selector-grid">
-
           <div>
-
-            <label for="seoCollegeSelect">
-              Select College
-            </label>
-
-            <select
-              id="seoCollegeSelect"
-              onchange="onSeoCollegeChange()"
-            >
-              <option value="">
-                Select a college
-              </option>
+            <label for="seoCollegeSelect">Select College</label>
+            <select id="seoCollegeSelect" onchange="onSeoCollegeChange()">
+              <option value="">Select a college</option>
             </select>
-
           </div>
-
           <div>
-
-            <label for="seoPageSelect">
-              Select Page
-            </label>
-
-            <select
-              id="seoPageSelect"
-              onchange="onSeoPageChange()"
-              disabled
-            >
-              <option value="">
-                Select a page
-              </option>
+            <label for="seoPageSelect">Select Page</label>
+            <select id="seoPageSelect" onchange="onSeoPageChange()" disabled>
+              <option value="">Select a page</option>
             </select>
-
           </div>
-
         </div>
-
       </section>
 
-      <section
-        class="card panel"
-        id="seoEditorPanel"
-        style="display:none"
-      >
-
-        <div
-          style="
-            display:flex;
-            justify-content:space-between;
-            gap:14px;
-            align-items:flex-start;
-            flex-wrap:wrap
-          "
-        >
-
+      <section class="card panel" id="seoEditorPanel" style="display:none">
+        <div style="display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap">
           <div>
-
-            <h2 id="seoEditorTitle">
-              Edit SEO
-            </h2>
-
-            <div
-              class="muted"
-              id="seoEditorSubtitle"
-            >
-              Update page-level SEO details and save them as a draft.
-            </div>
-
+            <h2 id="seoEditorTitle">Edit SEO</h2>
+            <div class="muted" id="seoEditorSubtitle">Update page-level SEO details and save them as a draft.</div>
           </div>
-
-          <span
-            class="category-badge"
-            id="seoPageCategory"
-          >
-            Page
-          </span>
-
+          <span class="category-badge" id="seoPageCategory">Page</span>
         </div>
 
         <div class="seo-form">
-
           <div class="seo-field">
-
-            <label for="seoHeaderTitle">
-              Header Title
-            </label>
-
-            <input
-              id="seoHeaderTitle"
-              placeholder="Enter page H1 / header title"
-              oninput="updateSeoPreview()"
-            >
-
-            <div class="seo-helper">
-              This updates the main H1 heading on the selected page.
-            </div>
-
+            <label for="seoHeaderTitle">Header Title</label>
+            <input id="seoHeaderTitle" placeholder="Enter page H1 / header title" oninput="updateSeoPreview()">
+            <div class="seo-helper">This updates the main H1 heading on the selected page.</div>
           </div>
 
           <div class="seo-field">
-
-            <label for="seoTitle">
-              SEO Title
-            </label>
-
-            <input
-              id="seoTitle"
-              placeholder="Enter SEO title"
-              oninput="updateSeoPreview()"
-            >
-
-            <div
-              class="seo-count"
-              id="seoTitleCount"
-            >
-              0 characters
-            </div>
-
+            <label for="seoTitle">SEO Title</label>
+            <input id="seoTitle" placeholder="Enter SEO title" oninput="updateSeoPreview()">
+            <div class="seo-count" id="seoTitleCount">0 characters</div>
           </div>
 
           <div class="seo-field">
-
-            <label for="seoDescription">
-              SEO Description
-            </label>
-
-            <textarea
-              id="seoDescription"
-              placeholder="Enter SEO description"
-              oninput="updateSeoPreview()"
-            ></textarea>
-
-            <div
-              class="seo-count"
-              id="seoDescriptionCount"
-            >
-              0 characters
-            </div>
-
+            <label for="seoDescription">SEO Description</label>
+            <textarea id="seoDescription" placeholder="Enter SEO description" oninput="updateSeoPreview()"></textarea>
+            <div class="seo-count" id="seoDescriptionCount">0 characters</div>
           </div>
 
           <div class="seo-field">
-
-            <label for="seoKeywords">
-              SEO Keywords
-            </label>
-
-            <input
-              id="seoKeywords"
-              placeholder="e.g. IIM Ahmedabad, MBA, admission, fees"
-              oninput="updateSeoPreview()"
-            >
-
-            <div class="seo-helper">
-              Separate keywords with commas.
-            </div>
-
+            <label for="seoKeywords">SEO Keywords</label>
+            <input id="seoKeywords" placeholder="e.g. IIM Ahmedabad, MBA, admission, fees" oninput="updateSeoPreview()">
+            <div class="seo-helper">Separate keywords with commas.</div>
           </div>
 
           <div class="seo-actions">
-
-            <button
-              class="btn"
-              id="saveSeoBtn"
-              onclick="saveSeoDraft()"
-            >
-              Save SEO Draft
-            </button>
-
-            <button
-              class="btn primary"
-              id="publishSeoBtn"
-              onclick="publishSeoChanges()"
-            >
-              Publish SEO Changes
-            </button>
-
+            <button class="btn" id="saveSeoBtn" onclick="saveSeoDraft()">Save SEO Draft</button>
+            <button class="btn primary" id="publishSeoBtn" onclick="publishSeoChanges()">Publish SEO Changes</button>
           </div>
-
         </div>
 
         <div class="seo-preview">
-
-          <div class="seo-preview-label">
-            Google Search Preview
-          </div>
-
-          <div
-            class="seo-preview-url"
-            id="seoPreviewUrl"
-          >
-            Select a page to preview its URL.
-          </div>
-
-          <div
-            class="seo-preview-title"
-            id="seoPreviewTitle"
-          >
-            SEO Title
-          </div>
-
-          <div
-            class="seo-preview-description"
-            id="seoPreviewDescription"
-          >
-            SEO description will appear here.
-          </div>
-
+          <div class="seo-preview-label">Google Search Preview</div>
+          <div class="seo-preview-url" id="seoPreviewUrl">Select a page to preview its URL.</div>
+          <div class="seo-preview-title" id="seoPreviewTitle">SEO Title</div>
+          <div class="seo-preview-description" id="seoPreviewDescription">SEO description will appear here.</div>
         </div>
-
       </section>
 
-      <section
-        class="card panel"
-        id="seoEmptyState"
-      >
-
-        <div class="empty">
-          Select a college and page to view and edit its SEO information.
-        </div>
-
+      <section class="card panel" id="seoEmptyState">
+        <div class="empty">Select a college and page to view and edit its SEO information.</div>
       </section>
-
     </section>
 
     <!-- HISTORY -->
-    <section
-      id="historyView"
-      style="display:none"
-    >
-
+    <section id="historyView" style="display:none">
       <div class="card panel">
-
-        <h2>
-          Publish History
-        </h2>
-
-        <div class="muted">
-          Recently published pages.
-        </div>
-
-        <div
-          id="historyList"
-          class="page-list"
-        ></div>
-
+        <h2>Publish History</h2>
+        <div class="muted">Recently published pages.</div>
+        <div id="historyList" class="page-list"></div>
       </div>
-
     </section>
 
     <!-- STRUCTURED VISUAL EDITOR -->
     <section id="editorView">
-
       <div class="editor-page">
+        <div class="editor-shell">
 
-        <div class="editor-header">
-
-          <div>
-
-            <div
-              class="editor-title"
-              id="editorTitle"
-            >
-              Structured Visual Editor
-            </div>
-
-            <div
-              class="muted"
-              id="editorSubtitle"
-            >
-              Structure Mirror: the frontend layout is preserved while content remains editable.
-            </div>
-
-          </div>
-
-          <div class="editor-header-actions">
-
-            <button
-              class="btn"
-              onclick="backToPages()"
-            >
-              ← Back
-            </button>
-
-            <button
-              class="btn"
-              onclick="save()"
-            >
-              Save Draft
-            </button>
-
-            <button
-              class="btn primary"
-              onclick="publish()"
-            >
-              Publish
-            </button>
-
-          </div>
-
-        </div>
-
-        <div class="editor-toolbar">
-
-          <button
-            class="tool"
-            onclick="cmd('bold')"
-          >
-            <b>B</b>
-          </button>
-
-          <button
-            class="tool"
-            onclick="cmd('italic')"
-          >
-            <i>I</i>
-          </button>
-
-          <button
-            class="tool"
-            onclick="cmd('insertUnorderedList')"
-          >
-            • List
-          </button>
-
-          <button
-            class="tool"
-            onclick="cmd('insertOrderedList')"
-          >
-            1. List
-          </button>
-
-          <button
-            class="tool"
-            onclick="cmd('createLink')"
-          >
-            Link
-          </button>
-
-          <!-- NEW: IMAGE -->
-          <button
-            class="tool"
-            onmousedown="event.preventDefault()"
-            onclick="openMediaModal('image')"
-          >
-            🖼️ Image
-          </button>
-
-          <!-- NEW: OFFICIAL PDF -->
-          <button
-            class="tool"
-            onmousedown="event.preventDefault()"
-            onclick="openMediaModal('pdf')"
-          >
-            📄 Official PDF
-          </button>
-
-          <span class="toolbar-divider"></span>
-
-          <button
-            class="tool"
-            onclick="addTableRow()"
-          >
-            + Table Row
-          </button>
-
-          <button
-            class="tool"
-            onclick="deleteTableRow()"
-          >
-            − Table Row
-          </button>
-
-          <div class="mode-group">
-
-            <button
-              class="mode-btn active"
-              id="editModeBtn"
-              onclick="setEditorMode('edit')"
-            >
-              Edit
-            </button>
-
-            <button
-              class="mode-btn"
-              id="previewModeBtn"
-              onclick="setEditorMode('preview')"
-            >
-              Preview
-            </button>
-
-            <button
-              class="mode-btn"
-              id="compareModeBtn"
-              onclick="setEditorMode('compare')"
-            >
-              Compare
-            </button>
-
-          </div>
-
-        </div>
-
-        <!-- EDIT / PREVIEW STAGE -->
-        <div
-          class="editor-stage"
-          id="editorStage"
-        >
-
-          <div
-            class="editor-canvas"
-            id="editorCanvas"
-          >
-
-            <div id="visualEditor"></div>
-
-          </div>
-
-        </div>
-
-        <!-- COMPARE STAGE -->
-        <div
-          class="compare-layout"
-          id="compareStage"
-          style="display:none"
-        >
-
-          <div class="compare-pane">
-
-            <div class="compare-pane-title">
-              CMS EDITOR — Current Draft
-            </div>
-
-            <div class="compare-scroll">
-
-              <div class="editor-canvas">
-                <div id="compareEditor"></div>
+          <!-- FIXED EDITOR HEADER -->
+          <div class="editor-header">
+            <div>
+              <div class="editor-title" id="editorTitle">Structured Visual Editor</div>
+              <div class="muted" id="editorSubtitle">
+                Structure Mirror: the frontend layout is preserved while content remains editable.
               </div>
-
             </div>
 
+            <div class="editor-header-actions">
+              <button class="btn" onclick="backToPages()">← Back</button>
+              <button class="btn" onclick="save()">Save Draft</button>
+              <button class="btn primary" onclick="publish()">Publish</button>
+            </div>
           </div>
 
-          <div class="compare-pane">
+          <!-- FIXED TOOLBAR -->
+          <div class="editor-toolbar" id="editorToolbar">
+            <button class="tool" type="button" onclick="cmd('bold')"><b>B</b></button>
+            <button class="tool" type="button" onclick="cmd('italic')"><i>I</i></button>
+            <button class="tool" type="button" onclick="cmd('insertUnorderedList')">• List</button>
+            <button class="tool" type="button" onclick="cmd('insertOrderedList')">1. List</button>
+            <button class="tool" type="button" onclick="cmd('createLink')">Link</button>
 
-            <div class="compare-pane-title">
-              FRONTEND STRUCTURE — Original Version
+            <button class="tool" type="button" onclick="openMediaModal('image')">🖼️ Image</button>
+            <button class="tool" type="button" onclick="openMediaModal('pdf')">📄 Official PDF</button>
+
+            <span class="toolbar-divider"></span>
+
+            <button class="tool" type="button" onclick="addTableRow()">+ Table Row</button>
+            <button class="tool" type="button" onclick="deleteTableRow()">− Table Row</button>
+
+            <div class="mode-group">
+              <button class="mode-btn active" id="editModeBtn" type="button" onclick="setEditorMode('edit')">Edit</button>
+              <button class="mode-btn" id="previewModeBtn" type="button" onclick="setEditorMode('preview')">Preview</button>
+              <button class="mode-btn" id="compareModeBtn" type="button" onclick="setEditorMode('compare')">Compare</button>
             </div>
+          </div>
 
-            <div class="compare-scroll">
+          <!-- EDIT / PREVIEW: ONLY THIS AREA SCROLLS -->
+          <div class="editor-stage" id="editorStage">
+            <div class="editor-canvas" id="editorCanvas">
+              <div id="visualEditor"></div>
+            </div>
+          </div>
 
-              <div class="editor-canvas">
-                <div id="compareOriginal"></div>
+          <!-- COMPARE: EACH PANE SCROLLS INSIDE THE SAME BOX -->
+          <div class="compare-layout" id="compareStage" style="display:none">
+            <div class="compare-pane">
+              <div class="compare-pane-title">CMS EDITOR — Current Draft</div>
+              <div class="compare-scroll">
+                <div class="editor-canvas">
+                  <div id="compareEditor"></div>
+                </div>
               </div>
-
             </div>
 
+            <div class="compare-pane">
+              <div class="compare-pane-title">FRONTEND STRUCTURE — Original Version</div>
+              <div class="compare-scroll">
+                <div class="editor-canvas">
+                  <div id="compareOriginal"></div>
+                </div>
+              </div>
+            </div>
           </div>
 
         </div>
-
       </div>
-
     </section>
-
   </main>
-
 </div>
 
 <!-- ADD COLLEGE MODAL -->
-<div
-  class="modal"
-  id="collegeModal"
->
-
+<div class="modal" id="collegeModal">
   <div class="dialog">
+    <h2>Add New College</h2>
+    <label for="collegeName">College Name</label>
+    <input id="collegeName" placeholder="e.g. IIM Lucknow">
 
-    <h2>
-      Add New College
-    </h2>
-
-    <label for="collegeName">
-      College Name
-    </label>
-
-    <input
-      id="collegeName"
-      placeholder="e.g. IIM Lucknow"
-    >
-
-    <label
-      for="collegeSlug"
-      style="margin-top:14px"
-    >
-      URL Slug (optional)
-    </label>
-
-    <input
-      id="collegeSlug"
-      placeholder="iim-lucknow"
-    >
+    <label for="collegeSlug" style="margin-top:14px">URL Slug (optional)</label>
+    <input id="collegeSlug" placeholder="iim-lucknow">
 
     <div class="dialog-actions">
-
-      <button
-        class="btn"
-        onclick="closeModal()"
-      >
-        Cancel
-      </button>
-
-      <button
-        class="btn primary"
-        onclick="addCollege()"
-      >
-        Create College
-      </button>
-
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn primary" onclick="addCollege()">Create College</button>
     </div>
-
   </div>
-
 </div>
 
 <!-- CREATE PAGE MODAL -->
-<div
-  class="modal"
-  id="pageModal"
->
-
+<div class="modal" id="pageModal">
   <div class="dialog">
+    <h2>Create New Page</h2>
 
-    <h2>
-      Create New Page
-    </h2>
-
-    <label for="pageCollege">
-      College
-    </label>
-
+    <label for="pageCollege">College</label>
     <select id="pageCollege"></select>
 
-    <label
-      for="pageType"
-      style="margin-top:14px"
-    >
-      Page Type
-    </label>
-
+    <label for="pageType" style="margin-top:14px">Page Type</label>
     <select id="pageType">
-
-      <option value="overview">
-        Overview
-      </option>
-
-      <option value="admission">
-        Admission
-      </option>
-
-      <option value="fees">
-        Courses &amp; Fees
-      </option>
-
-      <option value="placement">
-        Placement
-      </option>
-
-      <option value="custom">
-        Custom
-      </option>
-
+      <option value="overview">Overview</option>
+      <option value="admission">Admission</option>
+      <option value="fees">Courses & Fees</option>
+      <option value="placement">Placement</option>
+      <option value="custom">Custom</option>
     </select>
 
-    <label
-      for="pageCategory"
-      style="margin-top:14px"
-    >
-      Content Category
-    </label>
-
+    <label for="pageCategory" style="margin-top:14px">Content Category</label>
     <select id="pageCategory">
-
-      <option value="college">
-        College Page
-      </option>
-
-      <option value="course">
-        Course Page
-      </option>
-
-      <option value="exam">
-        Exam Page
-      </option>
-
-      <option value="placement">
-        Placement Page
-      </option>
-
+      <option value="college">College Page</option>
+      <option value="course">Course Page</option>
+      <option value="exam">Exam Page</option>
+      <option value="placement">Placement Page</option>
     </select>
 
-    <label
-      for="pageName"
-      style="margin-top:14px"
-    >
-      Page Name
-    </label>
-
-    <input
-      id="pageName"
-      placeholder="e.g. Placements 2026"
-    >
+    <label for="pageName" style="margin-top:14px">Page Name</label>
+    <input id="pageName" placeholder="e.g. Placements 2026">
 
     <div class="dialog-actions">
-
-      <button
-        class="btn"
-        onclick="closeModal()"
-      >
-        Cancel
-      </button>
-
-      <button
-        class="btn primary"
-        onclick="addPage()"
-      >
-        Create Page
-      </button>
-
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn primary" onclick="addPage()">Create Page</button>
     </div>
-
   </div>
-
 </div>
+<!-- =====================================================
+     MEDIA INSERT MODAL
+===================================================== -->
 
-<!-- MEDIA / OFFICIAL PDF MODAL -->
 <div
   class="modal"
   id="mediaModal"
+  style="display:none"
 >
-
-  <div class="dialog media-dialog">
-
-    <h2 id="mediaModalTitle">
-      Insert Media
-    </h2>
+  <div
+    class="modal-card"
+    style="max-width:620px"
+  >
 
     <div
-      class="muted"
-      id="mediaModalSubtitle"
+      style="
+        display:flex;
+        justify-content:space-between;
+        align-items:flex-start;
+        gap:16px;
+        margin-bottom:18px;
+      "
     >
-      Upload a file and insert it at the current cursor position.
+
+      <div>
+        <h2 id="mediaModalTitle">
+          Insert Media
+        </h2>
+
+        <div class="muted">
+          Upload this file only to the current page.
+        </div>
+      </div>
+
+      <button
+        class="btn"
+        onclick="closeMediaModal()"
+      >
+        ✕
+      </button>
+
     </div>
 
-    <div
-      class="seo-field"
-      style="margin-top:18px"
-    >
+
+    <div class="seo-field">
 
       <label for="mediaFile">
         Select File
@@ -1887,7 +825,6 @@ input,select{
 
       <input
         id="mediaFile"
-        class="media-file-input"
         type="file"
       >
 
@@ -1895,16 +832,15 @@ input,select{
         class="seo-helper"
         id="mediaFileHelp"
       >
-        Select an image. JPG, PNG, WEBP or GIF. Maximum 10 MB.
+        Select an image.
       </div>
 
     </div>
 
-    <!-- IMAGE FIELDS -->
+
     <div
       class="seo-field"
       id="imageAltField"
-      style="margin-top:14px"
     >
 
       <label for="mediaAltText">
@@ -1913,72 +849,81 @@ input,select{
 
       <input
         id="mediaAltText"
-        placeholder="e.g. IIM Ahmedabad campus"
+        placeholder="e.g. IIT Delhi DMS campus"
       >
-
-      <div class="seo-helper">
-        Describe the image clearly for accessibility and SEO.
-      </div>
 
     </div>
 
-    <!-- PDF FIELDS -->
+
     <div
-      id="pdfFields"
+      class="seo-field"
+      id="pdfAnchorField"
       style="display:none"
     >
 
-      <div
-        class="seo-field"
-        style="margin-top:14px"
+      <label for="mediaAnchorText">
+        PDF Anchor Text
+      </label>
+
+      <input
+        id="mediaAnchorText"
+        placeholder="e.g. Download IIT Delhi DMS Admission Brochure 2026"
       >
 
-        <label for="mediaAnchorText">
-          PDF Anchor Text
-        </label>
-
-        <input
-          id="mediaAnchorText"
-          placeholder="e.g. Download IIM Ahmedabad Admission Brochure 2026"
-        >
-
-        <div class="seo-helper">
-          This exact text will appear as the clickable link on the frontend.
-        </div>
-
-      </div>
-
-      <div
-        class="seo-field"
-        style="margin-top:14px"
-      >
-
-        <label for="mediaPdfTitle">
-          Document Title (optional)
-        </label>
-
-        <input
-          id="mediaPdfTitle"
-          placeholder="e.g. IIM Ahmedabad Admission Brochure 2026"
-        >
-
+      <div class="seo-helper">
+        This exact text will appear as the clickable link on the frontend.
       </div>
 
     </div>
 
-    <div class="media-note">
 
-      <b>
-        Page-specific insertion:
-      </b>
+    <div
+      class="seo-field"
+      id="pdfTitleField"
+      style="display:none"
+    >
 
-      this file will be uploaded for the currently selected college/page only.
-      It will not be added automatically to other pages.
-      The file is inserted where your cursor was placed in the editor.
+      <label for="mediaPdfTitle">
+        Document Title
+      </label>
+
+      <input
+        id="mediaPdfTitle"
+        placeholder="e.g. IIT Delhi DMS Admission Brochure 2026"
+      >
 
     </div>
 
-    <div class="dialog-actions">
+
+    <div
+      style="
+        margin-top:18px;
+        padding:14px;
+        border:1px solid #dce3ed;
+        border-radius:8px;
+        background:#f8fbff;
+      "
+    >
+
+      <strong>
+        Where will it be inserted?
+      </strong>
+
+      <div
+        class="muted"
+        style="margin-top:5px"
+      >
+        The file will be inserted exactly where your cursor
+        is currently placed in the editor.
+      </div>
+
+    </div>
+
+
+    <div
+      class="dialog-actions"
+      style="margin-top:20px"
+    >
 
       <button
         class="btn"
@@ -1992,17 +937,486 @@ input,select{
         id="insertMediaBtn"
         onclick="uploadAndInsertMedia()"
       >
-        Upload &amp; Insert
+        Upload & Insert
       </button>
 
     </div>
 
   </div>
-
 </div>
-
 <script>
+  // =========================================================
+// MEDIA / DOCUMENT INSERTION
+// =========================================================
 
+let mediaInsertType = "";
+let savedMediaSelection = null;
+
+function openMediaModal(type) {
+  if (!current) {
+    showNotice(
+      "Open a page before inserting media."
+    );
+    return;
+  }
+
+  mediaInsertType = type;
+
+  // Save the user's current cursor/selection.
+  saveMediaSelection();
+
+  const modal = $("mediaModal");
+
+  $("mediaFile").value = "";
+
+  $("mediaAltText").value = "";
+  $("mediaAnchorText").value = "";
+  $("mediaPdfTitle").value = "";
+
+  if (type === "image") {
+
+    $("mediaModalTitle").textContent =
+      "Insert Image";
+
+    $("mediaFile").setAttribute(
+      "accept",
+      "image/jpeg,image/png,image/webp,image/gif"
+    );
+
+    $("mediaFileHelp").textContent =
+      "JPG, PNG, WEBP or GIF. Maximum 10 MB.";
+
+    $("imageAltField").style.display =
+      "block";
+
+    $("pdfAnchorField").style.display =
+      "none";
+
+    $("pdfTitleField").style.display =
+      "none";
+
+  } else {
+
+    $("mediaModalTitle").textContent =
+      "Insert Official PDF";
+
+    $("mediaFile").setAttribute(
+      "accept",
+      "application/pdf"
+    );
+
+    $("mediaFileHelp").textContent =
+      "PDF only. Maximum 25 MB.";
+
+    $("imageAltField").style.display =
+      "none";
+
+    $("pdfAnchorField").style.display =
+      "block";
+
+    $("pdfTitleField").style.display =
+      "block";
+  }
+
+  modal.style.display = "grid";
+}
+
+
+function closeMediaModal() {
+  $("mediaModal").style.display =
+    "none";
+
+  mediaInsertType = "";
+  savedMediaSelection = null;
+}
+
+
+function saveMediaSelection() {
+  const selection =
+    window.getSelection();
+
+  if (
+    !selection ||
+    !selection.rangeCount
+  ) {
+    savedMediaSelection = null;
+    return;
+  }
+
+  const range =
+    selection.getRangeAt(0);
+
+  const editor =
+    $("visualEditor");
+
+  if (
+    !editor.contains(
+      range.commonAncestorContainer
+    )
+  ) {
+    savedMediaSelection = null;
+    return;
+  }
+
+  savedMediaSelection =
+    range.cloneRange();
+}
+
+
+function restoreMediaSelection() {
+  const editor =
+    $("visualEditor");
+
+  editor.focus();
+
+  if (!savedMediaSelection) {
+    const range =
+      document.createRange();
+
+    range.selectNodeContents(
+      editor
+    );
+
+    range.collapse(false);
+
+    const selection =
+      window.getSelection();
+
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    return;
+  }
+
+  const selection =
+    window.getSelection();
+
+  selection.removeAllRanges();
+
+  selection.addRange(
+    savedMediaSelection
+  );
+}
+
+
+function readFileAsDataUrl(file) {
+  return new Promise(
+    (resolve, reject) => {
+
+      const reader =
+        new FileReader();
+
+      reader.onload = () =>
+        resolve(reader.result);
+
+      reader.onerror = () =>
+        reject(
+          new Error(
+            "Unable to read the selected file."
+          )
+        );
+
+      reader.readAsDataURL(file);
+    }
+  );
+}
+
+
+async function uploadAndInsertMedia() {
+
+  if (!current) {
+    showNotice(
+      "No page is currently open."
+    );
+    return;
+  }
+
+  const file =
+    $("mediaFile").files[0];
+
+  if (!file) {
+    showNotice(
+      "Please select a file."
+    );
+    return;
+  }
+
+  if (
+    mediaInsertType === "image" &&
+    file.size > 10 * 1024 * 1024
+  ) {
+    showNotice(
+      "Image is larger than 10 MB."
+    );
+    return;
+  }
+
+  if (
+    mediaInsertType === "pdf" &&
+    file.size > 25 * 1024 * 1024
+  ) {
+    showNotice(
+      "PDF is larger than 25 MB."
+    );
+    return;
+  }
+
+  if (
+    mediaInsertType === "pdf" &&
+    !file.name.toLowerCase().endsWith(".pdf")
+  ) {
+    showNotice(
+      "Please select a PDF file."
+    );
+    return;
+  }
+
+  if (
+    mediaInsertType === "image" &&
+    !file.type.startsWith("image/")
+  ) {
+    showNotice(
+      "Please select a valid image."
+    );
+    return;
+  }
+
+  if (
+    mediaInsertType === "image" &&
+    !$("mediaAltText").value.trim()
+  ) {
+    showNotice(
+      "Please enter image alt text."
+    );
+    return;
+  }
+
+  if (
+    mediaInsertType === "pdf" &&
+    !$("mediaAnchorText").value.trim()
+  ) {
+    showNotice(
+      "Please enter the PDF anchor text."
+    );
+    return;
+  }
+
+  const button =
+    $("insertMediaBtn");
+
+  const originalText =
+    button.textContent;
+
+  try {
+
+    button.disabled = true;
+    button.textContent =
+      "Uploading...";
+
+    const dataUrl =
+      await readFileAsDataUrl(file);
+
+    const result =
+      await api(
+        "/api/media/upload",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body: JSON.stringify({
+            collegeId:
+              currentCollegeId,
+
+            pageId:
+              currentPageId,
+
+            kind:
+              mediaInsertType,
+
+            originalName:
+              file.name,
+
+            dataUrl
+          })
+        }
+      );
+
+    restoreMediaSelection();
+
+    if (
+      mediaInsertType === "image"
+    ) {
+
+      insertImageAtSelection(
+        result.url,
+        $("mediaAltText").value.trim()
+      );
+
+    } else {
+
+      insertPdfAtSelection(
+        result.url,
+        $("mediaAnchorText").value.trim(),
+        $("mediaPdfTitle").value.trim()
+      );
+    }
+
+    closeMediaModal();
+
+    showNotice(
+      mediaInsertType === "image"
+        ? "Image inserted successfully. Save the draft to keep it."
+        : "Official PDF inserted successfully. Save the draft to keep it.",
+      "success"
+    );
+
+  } catch (error) {
+
+    showNotice(
+      error.message ||
+      "Unable to upload media."
+    );
+
+  } finally {
+
+    button.disabled = false;
+    button.textContent =
+      originalText;
+  }
+}
+
+
+function insertImageAtSelection(
+  url,
+  altText
+) {
+
+  const image =
+    document.createElement("img");
+
+  image.src = url;
+  image.alt = altText;
+
+  image.style.maxWidth =
+    "100%";
+
+  image.style.height =
+    "auto";
+
+  image.setAttribute(
+    "data-cms-media",
+    "image"
+  );
+
+  const selection =
+    window.getSelection();
+
+  if (
+    selection &&
+    selection.rangeCount
+  ) {
+
+    const range =
+      selection.getRangeAt(0);
+
+    range.deleteContents();
+
+    range.insertNode(image);
+
+    range.setStartAfter(
+      image
+    );
+
+    range.collapse(true);
+
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+  } else {
+
+    $("visualEditor")
+      .appendChild(image);
+  }
+}
+
+
+function insertPdfAtSelection(
+  url,
+  anchorText,
+  documentTitle
+) {
+
+  const wrapper =
+    document.createElement("div");
+
+  wrapper.setAttribute(
+    "data-cms-media",
+    "pdf"
+  );
+
+  wrapper.style.margin =
+    "16px 0";
+
+  const link =
+    document.createElement("a");
+
+  link.href = url;
+  link.target = "_blank";
+  link.rel =
+    "noopener noreferrer";
+
+  link.textContent =
+    anchorText;
+
+  link.setAttribute(
+    "data-cms-pdf",
+    "true"
+  );
+
+  if (documentTitle) {
+    link.title =
+      documentTitle;
+  }
+
+  wrapper.appendChild(link);
+
+  const selection =
+    window.getSelection();
+
+  if (
+    selection &&
+    selection.rangeCount
+  ) {
+
+    const range =
+      selection.getRangeAt(0);
+
+    range.deleteContents();
+
+    range.insertNode(wrapper);
+
+    range.setStartAfter(
+      wrapper
+    );
+
+    range.collapse(true);
+
+    selection.removeAllRanges();
+
+    selection.addRange(
+      range
+    );
+
+  } else {
+
+    $("visualEditor")
+      .appendChild(wrapper);
+  }
+}
 let data = null;
 let current = null;
 let currentCollegeId = "";
@@ -2015,106 +1429,49 @@ let authenticatedUser = null;
 let seoCollegeId = "";
 let seoPageId = "";
 
-/* ==============================
-   COMMON HELPERS
-================================ */
-
 function $(id) {
   return document.getElementById(id);
 }
 
 function escapeHtml(value = "") {
-  return String(value).replace(
-    /[&<>"']/g,
-    (char) => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#039;"
-    }[char])
-  );
+  return String(value).replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;"
+  }[char]));
 }
 
-function showNotice(
-  message,
-  type = "error"
-) {
-
+function showNotice(message, type = "error") {
   const box = $("notice");
-
   box.textContent = message;
+  box.className = `notice show ${type === "success" ? "success" : ""}`;
 
-  box.className =
-    `notice show ${
-      type === "success"
-        ? "success"
-        : ""
-    }`;
-
-  clearTimeout(
-    showNotice.timer
-  );
-
-  showNotice.timer =
-    setTimeout(
-      () => {
-        box.className =
-          "notice";
-      },
-      7000
-    );
+  clearTimeout(showNotice.timer);
+  showNotice.timer = setTimeout(() => {
+    box.className = "notice";
+  }, 7000);
 }
 
-async function api(
-  url,
-  options = {}
-) {
+async function api(url, options = {}) {
+  const response = await fetch(url, {
+    credentials: "same-origin",
+    ...options
+  });
 
-  const response =
-    await fetch(
-      url,
-      {
-        credentials:
-          "same-origin",
-        ...options
-      }
-    );
+  const contentType = response.headers.get("content-type") || "";
+  const body = contentType.includes("application/json")
+    ? await response.json()
+    : { error: await response.text() };
 
-  const contentType =
-    response.headers.get(
-      "content-type"
-    ) || "";
-
-  const body =
-    contentType.includes(
-      "application/json"
-    )
-      ? await response.json()
-      : {
-          error:
-            await response.text()
-        };
-
-  if (
-    response.status === 401
-  ) {
-
+  if (response.status === 401) {
     showLogin();
-
-    throw new Error(
-      body.error ||
-      "Your session has expired. Please sign in again."
-    );
+    throw new Error(body.error || "Your session has expired. Please sign in again.");
   }
 
   if (!response.ok) {
-
-    throw new Error(
-      body.error ||
-      body.message ||
-      "Something went wrong"
-    );
+    throw new Error(body.error || body.message || "Something went wrong");
   }
 
   return body;
@@ -2123,1383 +1480,577 @@ async function api(
 /* ==============================
    AUTHENTICATION
 ================================ */
-
-function showLogin(
-  message = ""
-) {
-
-  $("app").style.display =
-    "none";
-
-  $("loginView").style.display =
-    "flex";
+function showLogin(message = "") {
+  $("app").style.display = "none";
+  $("loginView").style.display = "flex";
 
   if (message) {
-
-    $("loginError").textContent =
-      message;
-
-    $("loginError")
-      .classList
-      .add("show");
-
+    $("loginError").textContent = message;
+    $("loginError").classList.add("show");
   } else {
-
-    $("loginError")
-      .classList
-      .remove("show");
-
+    $("loginError").classList.remove("show");
   }
 }
 
 function showApp() {
-
-  $("loginView").style.display =
-    "none";
-
-  $("app").style.display =
-    "flex";
+  $("loginView").style.display = "none";
+  $("app").style.display = "flex";
 }
 
 async function checkSession() {
-
   try {
+    const response = await fetch("/api/me", { credentials: "same-origin" });
+    const result = await response.json();
 
-    const response =
-      await fetch(
-        "/api/me",
-        {
-          credentials:
-            "same-origin"
-        }
-      );
-
-    const result =
-      await response.json();
-
-    if (
-      result.authenticated
-    ) {
-
-      authenticatedUser =
-        result.user;
-
+    if (result.authenticated) {
+      authenticatedUser = result.user;
       showApp();
-
       await load();
-
       return;
     }
 
     showLogin();
-
   } catch (error) {
-
-    showLogin(
-      "Unable to connect to the CMS server. Please refresh and try again."
-    );
-
+    showLogin("Unable to connect to the CMS server. Please refresh and try again.");
   }
 }
 
 async function signIn(event) {
-
   event.preventDefault();
 
-  const username =
-    $("loginUsername")
-      .value
-      .trim();
+  const username = $("loginUsername").value.trim();
+  const password = $("loginPassword").value;
+  const button = $("loginBtn");
 
-  const password =
-    $("loginPassword")
-      .value;
+  $("loginError").classList.remove("show");
 
-  const button =
-    $("loginBtn");
-
-  $("loginError")
-    .classList
-    .remove("show");
-
-  if (
-    !username ||
-    !password
-  ) {
-
-    $("loginError")
-      .textContent =
-      "Please enter both username and password.";
-
-    $("loginError")
-      .classList
-      .add("show");
-
+  if (!username || !password) {
+    $("loginError").textContent = "Please enter both username and password.";
+    $("loginError").classList.add("show");
     return;
   }
 
   button.disabled = true;
-
-  button.textContent =
-    "Signing in...";
+  button.textContent = "Signing in...";
 
   try {
+    const response = await fetch("/api/login", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password })
+    });
 
-    const response =
-      await fetch(
-        "/api/login",
-        {
-          method:
-            "POST",
-
-          credentials:
-            "same-origin",
-
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
-
-          body:
-            JSON.stringify({
-              username,
-              password
-            })
-        }
-      );
-
-    const result =
-      await response.json();
+    const result = await response.json();
 
     if (!response.ok) {
-
-      throw new Error(
-        result.error ||
-        "Unable to sign in."
-      );
+      throw new Error(result.error || "Unable to sign in.");
     }
 
-    authenticatedUser =
-      result.user ||
-      { username };
-
-    $("loginPassword")
-      .value = "";
-
+    authenticatedUser = result.user || { username };
+    $("loginPassword").value = "";
     showApp();
-
     await load();
-
   } catch (error) {
-
-    $("loginError")
-      .textContent =
-      error.message ||
-      "Unable to sign in.";
-
-    $("loginError")
-      .classList
-      .add("show");
-
+    $("loginError").textContent = error.message || "Unable to sign in.";
+    $("loginError").classList.add("show");
   } finally {
-
     button.disabled = false;
-
-    button.textContent =
-      "Sign in to CMS";
+    button.textContent = "Sign in to CMS";
   }
 }
 
 /* ==============================
    DATA / DASHBOARD
 ================================ */
-
-function normaliseCategoryKey(
-  value = ""
-) {
-
+/* ==============================
+   CONTENT CATEGORIES
+   Uses an explicit category when the API provides one. Existing pages created
+   before categories were introduced are classified from their name/type.
+================================= */
+function normaliseCategoryKey(value = "") {
   return String(value)
     .toLowerCase()
-    .replace(
-      /[^a-z0-9]+/g,
-      " "
-    )
+    .replace(/[^a-z0-9]+/g, " ")
     .trim()
-    .replace(
-      /\s+/g,
-      " "
-    );
+    .replace(/\s+/g, " ");
 }
 
+/*
+  Exact mapping for the 23 pages already created in this CMS.
+  This runs before the generic rules because many existing pages use the
+  same template name (for example, Overview), while their content category
+  is different. New pages can still use their saved category or the fallback
+  detection rules below.
+*/
 const EXISTING_CATEGORY_MAP = {
-
-  "iit delhi dms":
-    "college",
-
-  "iim ahmedabad business analytics ai":
-    "course",
-
-  "iim ahmedabad mba fabm":
-    "course",
-
-  "iim ahmedabad mba":
-    "course",
-
-  "iim ahmedabad pgpx":
-    "course",
-
-  "iim ahmedabad":
-    "college",
-
-  "iim bangalore":
-    "college",
-
-  "iim calcutta mba":
-    "course",
-
-  "iim calcutta mbaex":
-    "course",
-
-  "iim calcutta pgdba":
-    "course",
-
-  "iim calcutta":
-    "college",
-
-  "iim indore":
-    "college",
-
-  "iim kozhikode":
-    "college",
-
-  "iim lucknow":
-    "college",
-
-  "iim mumbai":
-    "college",
-
-  "mdi gurugram":
-    "college",
-
-  "snap":
-    "exam",
-
-  "xat":
-    "exam",
-
-  "xlri jamshedpur":
-    "college"
+  "iit delhi dms": "college",
+  "iim ahmedabad business analytics ai": "course",
+  "iim ahmedabad mba fabm": "course",
+  "iim ahmedabad mba": "course",
+  "iim ahmedabad pgpx": "course",
+  "iim ahmedabad": "college",
+  "iim bangalore": "college",
+  "iim calcutta mba": "course",
+  "iim calcutta mbaex": "course",
+  "iim calcutta pgdba": "course",
+  "iim calcutta": "college",
+  "iim indore": "college",
+  "iim kozhikode": "college",
+  "iim lucknow": "college",
+  "iim mumbai": "college",
+  "mdi gurugram": "college",
+  "snap": "exam",
+  "xat": "exam",
+  "xlri jamshedpur": "college"
 };
 
-function getPageCategory(
-  page = {},
-  college = {}
-) {
+function getPageCategory(page = {}, college = {}) {
+  const collegeName = normaliseCategoryKey(college.name || page.collegeName || "");
+  const pageName = normaliseCategoryKey(page.name || "");
+  const pageType = normaliseCategoryKey(page.type || "");
+  const pageSlug = normaliseCategoryKey(page.slug || "");
 
-  const collegeName =
-    normaliseCategoryKey(
-      college.name ||
-      page.collegeName ||
-      ""
-    );
-
-  const pageName =
-    normaliseCategoryKey(
-      page.name || ""
-    );
-
-  const pageType =
-    normaliseCategoryKey(
-      page.type || ""
-    );
-
-  const pageSlug =
-    normaliseCategoryKey(
-      page.slug || ""
-    );
-
-  if (
-    /\bplacement|placements|salary|recruiter|recruitment\b/
-      .test(
-        `${pageName} ${pageType} ${pageSlug}`
-      )
-  ) {
-
+  // Placement pages are identified by their page itself, regardless of college.
+  if (/\bplacement|placements|salary|recruiter|recruitment\b/.test(`${pageName} ${pageType} ${pageSlug}`)) {
     return "placement";
   }
 
-  if (
-    EXISTING_CATEGORY_MAP[
-      collegeName
-    ]
-  ) {
-
-    return EXISTING_CATEGORY_MAP[
-      collegeName
-    ];
+  // Exact mapping for the existing 23-page CMS list.
+  if (EXISTING_CATEGORY_MAP[collegeName]) {
+    return EXISTING_CATEGORY_MAP[collegeName];
   }
 
-  const explicit =
-    String(
-      page.category || ""
-    ).toLowerCase();
+  // Explicit category selected for future pages takes priority for pages
+  // outside the existing mapped list.
+  const explicit = String(page.category || "").toLowerCase();
+  if (["college", "course", "exam", "placement"].includes(explicit)) return explicit;
 
-  if (
-    [
-      "college",
-      "course",
-      "exam",
-      "placement"
-    ].includes(explicit)
-  ) {
-
-    return explicit;
-  }
-
-  const text =
-    `${collegeName} ${pageName} ${pageType} ${pageSlug}`;
-
-  if (
-    /\b(cat|xat|snap|cmat|mat|gmat|gre|gate|jee|neet|cuet|nmat|iift|tissnet)\b/
-      .test(text)
-  ) {
-
-    return "exam";
-  }
-
-  if (
-    /\b(mba|pgp|pgpx|pgdm|fabm|pgdba|programme|program|course)\b|business analytics|executive mba/
-      .test(text)
-  ) {
-
-    return "course";
-  }
+  const text = `${collegeName} ${pageName} ${pageType} ${pageSlug}`;
+  if (/\b(cat|xat|snap|cmat|mat|gmat|gre|gate|jee|neet|cuet|nmat|iift|tissnet)\b/.test(text)) return "exam";
+  if (/\b(mba|pgp|pgpx|pgdm|fabm|pgdba|programme|program|course)\b|business analytics|executive mba/.test(text)) return "course";
 
   return "college";
 }
-
-function getCategoryLabel(
-  category
-) {
-
-  return ({
-    college:
-      "College",
-
-    course:
-      "Course",
-
-    exam:
-      "Exam",
-
-    placement:
-      "Placement"
-
-  })[category] ||
-    "College";
+function getCategoryLabel(category) {
+  return ({college:"College",course:"Course",exam:"Exam",placement:"Placement"})[category] || "College";
 }
 
 async function load() {
-
   try {
+    data = await api("/api/colleges");
 
-    data =
-      await api(
-        "/api/colleges"
-      );
-
-    const colleges =
-      data.colleges ||
-      [];
-
-    const pageEntries =
-      colleges.flatMap(
-        (college) =>
-          (
-            college.pages ||
-            []
-          ).map(
-            (page) => ({
-              college,
-              page
-            })
-          )
-      );
-
-    const pages =
-      pageEntries.map(
-        (entry) =>
-          entry.page
-      );
-
-    const categoryCounts = {
-      college: 0,
-      course: 0,
-      exam: 0,
-      placement: 0
-    };
-
-    pageEntries.forEach(
-      ({
-        college,
-        page
-      }) => {
-
-        categoryCounts[
-          getPageCategory(
-            page,
-            college
-          )
-        ] += 1;
-
-      }
+    const colleges = data.colleges || [];
+    const pageEntries = colleges.flatMap((college) =>
+      (college.pages || []).map((page) => ({ college, page }))
     );
+    const pages = pageEntries.map((entry) => entry.page);
 
-    $("collegePageCount")
-      .textContent =
-      categoryCounts.college;
+    const categoryCounts = { college: 0, course: 0, exam: 0, placement: 0 };
+    pageEntries.forEach(({ college, page }) => {
+      categoryCounts[getPageCategory(page, college)] += 1;
+    });
+    $("collegePageCount").textContent = categoryCounts.college;
+    $("coursePageCount").textContent = categoryCounts.course;
+    $("examPageCount").textContent = categoryCounts.exam;
+    $("placementPageCount").textContent = categoryCounts.placement;
+    $("pageCount").textContent = pages.length;
+    $("liveCount").textContent = pages.filter((page) => page.status === "live").length;
 
-    $("coursePageCount")
-      .textContent =
-      categoryCounts.course;
-
-    $("examPageCount")
-      .textContent =
-      categoryCounts.exam;
-
-    $("placementPageCount")
-      .textContent =
-      categoryCounts.placement;
-
-    $("pageCount")
-      .textContent =
-      pages.length;
-
-    $("liveCount")
-      .textContent =
-      pages.filter(
-        (page) =>
-          page.status ===
-          "live"
-      ).length;
-
-    $("collegeSelect")
-      .innerHTML =
+    $("collegeSelect").innerHTML =
       `<option value="">Select a college</option>` +
-      colleges.map(
-        (college) =>
-          `<option value="${escapeHtml(college.id)}">${escapeHtml(college.name)}</option>`
+      colleges.map((college) =>
+        `<option value="${escapeHtml(college.id)}">${escapeHtml(college.name)}</option>`
       ).join("");
 
-    $("pageCollege")
-      .innerHTML =
+    $("pageCollege").innerHTML =
       colleges.length
-        ? colleges.map(
-            (college) =>
-              `<option value="${escapeHtml(college.id)}">${escapeHtml(college.name)}</option>`
+        ? colleges.map((college) =>
+            `<option value="${escapeHtml(college.id)}">${escapeHtml(college.name)}</option>`
           ).join("")
         : `<option value="">No colleges available</option>`;
 
-    $("seoCollegeSelect")
-      .innerHTML =
+    $("seoCollegeSelect").innerHTML =
       `<option value="">Select a college</option>` +
-      colleges.map(
-        (college) =>
-          `<option value="${escapeHtml(college.id)}">${escapeHtml(college.name)}</option>`
+      colleges.map((college) =>
+        `<option value="${escapeHtml(college.id)}">${escapeHtml(college.name)}</option>`
       ).join("");
 
-    if (
-      seoCollegeId &&
-      colleges.some(
-        (college) =>
-          college.id ===
-          seoCollegeId
-      )
-    ) {
-
-      $("seoCollegeSelect")
-        .value =
-        seoCollegeId;
-
+    if (seoCollegeId && colleges.some((college) => college.id === seoCollegeId)) {
+      $("seoCollegeSelect").value = seoCollegeId;
       populateSeoPages();
-
-      if (seoPageId) {
-
-        $("seoPageSelect")
-          .value =
-          seoPageId;
-      }
+      if (seoPageId) $("seoPageSelect").value = seoPageId;
     }
 
     renderAllPages();
 
-    if (
-      currentCollegeId &&
-      colleges.some(
-        (college) =>
-          college.id ===
-          currentCollegeId
-      )
-    ) {
-
-      $("collegeSelect")
-        .value =
-        currentCollegeId;
-
+    if (currentCollegeId && colleges.some((college) => college.id === currentCollegeId)) {
+      $("collegeSelect").value = currentCollegeId;
       onCollegeChange();
 
       if (currentPageId) {
-
-        $("pageSelect")
-          .value =
-          currentPageId;
-
+        $("pageSelect").value = currentPageId;
         onPageChange();
       }
     }
-
   } catch (error) {
-
-    if (
-      $("app").style.display !==
-      "none"
-    ) {
-
-      showNotice(
-        error.message ||
-        "Unable to load CMS data."
-      );
+    if ($("app").style.display !== "none") {
+      showNotice(error.message || "Unable to load CMS data.");
     }
   }
 }
 
 function renderAllPages() {
+  const pages = (data?.colleges || []).flatMap((college) =>
+    (college.pages || []).map((page) => ({ college, page }))
+  );
 
-  const pages =
-    (
-      data?.colleges ||
-      []
-    ).flatMap(
-      (college) =>
-        (
-          college.pages ||
-          []
-        ).map(
-          (page) => ({
-            college,
-            page
-          })
-        )
-    );
-
-  $("allPagesList")
-    .innerHTML =
-    pages.length
-
-      ? pages.map(
-          ({
-            college,
-            page
-          }) => `
-
-        <div
-          class="page"
-          onclick="edit('${college.id}:${page.id}')"
-        >
-
-          <span class="badge">
-            ${escapeHtml(page.status)}
-          </span>
-
-          <b>
-            ${escapeHtml(college.name)}
-            ·
-            ${escapeHtml(page.name)}
-          </b>
-
-          <div class="category-badge">
-            ${escapeHtml(
-              getCategoryLabel(
-                getPageCategory(
-                  page,
-                  college
-                )
-              )
-            )}
-          </div>
-
-          <div class="muted">
-            Template:
-            ${escapeHtml(
-              page.type ||
-              "custom"
-            )}
-          </div>
-
+  $("allPagesList").innerHTML = pages.length
+    ? pages.map(({ college, page }) => `
+        <div class="page" onclick="edit('${college.id}:${page.id}')">
+          <span class="badge">${escapeHtml(page.status)}</span>
+          <b>${escapeHtml(college.name)} · ${escapeHtml(page.name)}</b>
+          <div class="category-badge">${escapeHtml(getCategoryLabel(getPageCategory(page, college)))}</div>
+          <div class="muted">Template: ${escapeHtml(page.type || "custom")}</div>
         </div>
-
-      `
-        ).join("")
-
-      : `<div class="empty">
-          No pages available yet.
-          Create your first page.
-        </div>`;
+      `).join("")
+    : `<div class="empty">No pages available yet. Create your first page.</div>`;
 }
 
 function onCollegeChange() {
-
-  currentCollegeId =
-    $("collegeSelect")
-      .value;
-
+  currentCollegeId = $("collegeSelect").value;
   currentPageId = "";
 
-  const college =
-    data?.colleges?.find(
-      (item) =>
-        item.id ===
-        currentCollegeId
-    );
-
-  const pageSelect =
-    $("pageSelect");
+  const college = data?.colleges?.find((item) => item.id === currentCollegeId);
+  const pageSelect = $("pageSelect");
 
   if (!college) {
-
-    pageSelect.disabled =
-      true;
-
-    pageSelect.innerHTML =
-      `<option value="">Select a page</option>`;
-
-    $("editSelectedBtn")
-      .disabled =
-      true;
-
-    $("pageList")
-      .innerHTML =
-      `<div class="empty">
-        Select a college to view its pages.
-      </div>`;
-
+    pageSelect.disabled = true;
+    pageSelect.innerHTML = `<option value="">Select a page</option>`;
+    $("editSelectedBtn").disabled = true;
+    $("pageList").innerHTML = `<div class="empty">Select a college to view its pages.</div>`;
     return;
   }
 
-  const pages =
-    college.pages ||
-    [];
+  const pages = college.pages || [];
 
-  pageSelect.disabled =
-    false;
-
+  pageSelect.disabled = false;
   pageSelect.innerHTML =
     `<option value="">Select a page</option>` +
-    pages.map(
-      (page) =>
-        `<option value="${escapeHtml(page.id)}">${escapeHtml(page.name)}</option>`
+    pages.map((page) =>
+      `<option value="${escapeHtml(page.id)}">${escapeHtml(page.name)}</option>`
     ).join("");
 
-  $("editSelectedBtn")
-    .disabled =
-    true;
+  $("editSelectedBtn").disabled = true;
 
-  $("pageList")
-    .innerHTML =
-    pages.length
-
-      ? pages.map(
-          (page) => `
-
-        <div
-          class="page"
-          onclick="edit('${college.id}:${page.id}')"
-        >
-
-          <span class="badge">
-            ${escapeHtml(page.status)}
-          </span>
-
-          <b>
-            ${escapeHtml(page.name)}
-          </b>
-
-          <div class="category-badge">
-            ${escapeHtml(
-              getCategoryLabel(
-                getPageCategory(
-                  page,
-                  college
-                )
-              )
-            )}
-          </div>
-
-          <div class="muted">
-            Template:
-            ${escapeHtml(
-              page.type ||
-              "custom"
-            )}
-          </div>
-
+  $("pageList").innerHTML = pages.length
+    ? pages.map((page) => `
+        <div class="page" onclick="edit('${college.id}:${page.id}')">
+          <span class="badge">${escapeHtml(page.status)}</span>
+          <b>${escapeHtml(page.name)}</b>
+          <div class="category-badge">${escapeHtml(getCategoryLabel(getPageCategory(page, college)))}</div>
+          <div class="muted">Template: ${escapeHtml(page.type || "custom")}</div>
         </div>
-
-      `
-        ).join("")
-
-      : `<div class="empty">
-          No pages exist for this college yet.
-          Use “Create Page” to add one.
-        </div>`;
+      `).join("")
+    : `<div class="empty">No pages exist for this college yet. Use “Create Page” to add one.</div>`;
 }
 
 function onPageChange() {
-
-  currentPageId =
-    $("pageSelect")
-      .value;
-
-  $("editSelectedBtn")
-    .disabled =
-    !currentPageId;
+  currentPageId = $("pageSelect").value;
+  $("editSelectedBtn").disabled = !currentPageId;
 }
 
 function editSelectedPage() {
-
-  if (
-    !currentCollegeId ||
-    !currentPageId
-  ) {
-
-    return;
-  }
-
-  edit(
-    `${currentCollegeId}:${currentPageId}`
-  );
+  if (!currentCollegeId || !currentPageId) return;
+  edit(`${currentCollegeId}:${currentPageId}`);
 }
+
 
 /* ==============================
    SEO CENTRE
 ================================ */
 
 function resetSeoEditor() {
+  $("seoEditorPanel").style.display = "none";
+  $("seoEmptyState").style.display = "block";
 
-  $("seoEditorPanel")
-    .style.display =
-    "none";
+  $("seoHeaderTitle").value = "";
+  $("seoTitle").value = "";
+  $("seoDescription").value = "";
+  $("seoKeywords").value = "";
 
-  $("seoEmptyState")
-    .style.display =
-    "block";
-
-  $("seoHeaderTitle")
-    .value = "";
-
-  $("seoTitle")
-    .value = "";
-
-  $("seoDescription")
-    .value = "";
-
-  $("seoKeywords")
-    .value = "";
-
-  $("seoTitleCount")
-    .textContent =
-    "0 characters";
-
-  $("seoDescriptionCount")
-    .textContent =
-    "0 characters";
-
-  $("seoPreviewUrl")
-    .textContent =
-    "Select a page to preview its URL.";
-
-  $("seoPreviewTitle")
-    .textContent =
-    "SEO Title";
-
-  $("seoPreviewDescription")
-    .textContent =
-    "SEO description will appear here.";
+  $("seoTitleCount").textContent = "0 characters";
+  $("seoDescriptionCount").textContent = "0 characters";
+  $("seoPreviewUrl").textContent = "Select a page to preview its URL.";
+  $("seoPreviewTitle").textContent = "SEO Title";
+  $("seoPreviewDescription").textContent = "SEO description will appear here.";
 }
 
 function getSeoSelectedCollege() {
-
-  return (
-    data?.colleges?.find(
-      (college) =>
-        college.id ===
-        seoCollegeId
-    ) ||
-    null
-  );
+  return data?.colleges?.find((college) => college.id === seoCollegeId) || null;
 }
 
 function getSeoSelectedPage() {
-
-  const college =
-    getSeoSelectedCollege();
-
-  return (
-    college?.pages?.find(
-      (page) =>
-        page.id ===
-        seoPageId
-    ) ||
-    null
-  );
+  const college = getSeoSelectedCollege();
+  return college?.pages?.find((page) => page.id === seoPageId) || null;
 }
 
 function onSeoCollegeChange() {
-
-  seoCollegeId =
-    $("seoCollegeSelect")
-      .value;
-
+  seoCollegeId = $("seoCollegeSelect").value;
   seoPageId = "";
 
   resetSeoEditor();
-
   populateSeoPages();
 }
 
 function populateSeoPages() {
+  const pageSelect = $("seoPageSelect");
+  const college = getSeoSelectedCollege();
 
-  const pageSelect =
-    $("seoPageSelect");
-
-  const college =
-    getSeoSelectedCollege();
-
-  pageSelect.innerHTML =
-    `<option value="">Select a page</option>`;
-
-  pageSelect.disabled =
-    true;
+  pageSelect.innerHTML = `<option value="">Select a page</option>`;
+  pageSelect.disabled = true;
 
   if (!college) return;
 
-  const pages =
-    college.pages ||
-    [];
+  const pages = college.pages || [];
 
   if (!pages.length) {
-
-    pageSelect.innerHTML =
-      `<option value="">No pages available</option>`;
-
+    pageSelect.innerHTML = `<option value="">No pages available</option>`;
     return;
   }
 
-  pageSelect.disabled =
-    false;
-
+  pageSelect.disabled = false;
   pageSelect.innerHTML =
     `<option value="">Select a page</option>` +
-    pages.map(
-      (page) =>
-        `<option value="${escapeHtml(page.id)}">${escapeHtml(page.name)}</option>`
+    pages.map((page) =>
+      `<option value="${escapeHtml(page.id)}">${escapeHtml(page.name)}</option>`
     ).join("");
 
-  if (
-    seoPageId &&
-    pages.some(
-      (page) =>
-        page.id ===
-        seoPageId
-    )
-  ) {
-
-    pageSelect.value =
-      seoPageId;
+  if (seoPageId && pages.some((page) => page.id === seoPageId)) {
+    pageSelect.value = seoPageId;
   }
 }
 
 function onSeoPageChange() {
+  seoPageId = $("seoPageSelect").value;
 
-  seoPageId =
-    $("seoPageSelect")
-      .value;
-
-  if (
-    !seoCollegeId ||
-    !seoPageId
-  ) {
-
+  if (!seoCollegeId || !seoPageId) {
     resetSeoEditor();
-
     return;
   }
 
   loadSeoPage();
 }
 
-function getPageUrl(
-  college,
-  page
-) {
+function getPageUrl(college, page) {
+  if (page.url) return page.url;
+  if (page.path) return page.path;
 
-  if (page.url)
-    return page.url;
+  const collegeSlug = college.slug || "";
+  const pageSlug = page.slug || "";
 
-  if (page.path)
-    return page.path;
+  if (pageSlug && /^https?:\/\//i.test(pageSlug)) return pageSlug;
 
-  const collegeSlug =
-    college.slug ||
-    "";
-
-  const pageSlug =
-    page.slug ||
-    "";
-
-  if (
-    pageSlug &&
-    /^https?:\/\//i
-      .test(pageSlug)
-  ) {
-
-    return pageSlug;
+  if (collegeSlug && pageSlug) {
+    return `/${collegeSlug}/${pageSlug}`.replace(/\/+/g, "/");
   }
 
-  if (
-    collegeSlug &&
-    pageSlug
-  ) {
-
-    return `/${collegeSlug}/${pageSlug}`
-      .replace(
-        /\/+/g,
-        "/"
-      );
-  }
-
-  if (collegeSlug) {
-
-    return `/${collegeSlug}`
-      .replace(
-        /\/+/g,
-        "/"
-      );
-  }
-
+  if (collegeSlug) return `/${collegeSlug}`.replace(/\/+/g, "/");
   return "Selected page URL";
 }
 
-function getPageHeaderTitle(
-  page
-) {
-
-  return (
-    page.seo?.headerTitle ||
+function getPageHeaderTitle(page) {
+  return page.seo?.headerTitle ||
     page.headerTitle ||
     page.seoHeaderTitle ||
-    ""
-  );
+    "";
 }
 
-function getPageSeoTitle(
-  page
-) {
-
-  return (
-    page.seo?.title ||
+function getPageSeoTitle(page) {
+  return page.seo?.title ||
     page.seoTitle ||
     page.title ||
-    ""
-  );
+    "";
 }
 
-function getPageSeoDescription(
-  page
-) {
-
-  return (
-    page.seo?.description ||
+function getPageSeoDescription(page) {
+  return page.seo?.description ||
     page.seoDescription ||
     page.description ||
-    ""
-  );
+    "";
 }
 
-function getPageSeoKeywords(
-  page
-) {
-
+function getPageSeoKeywords(page) {
   const keywords =
     page.seo?.keywords ??
     page.seoKeywords ??
     page.keywords ??
     "";
 
-  return Array.isArray(
-    keywords
-  )
-    ? keywords.join(", ")
-    : keywords;
+  return Array.isArray(keywords) ? keywords.join(", ") : keywords;
 }
 
 function loadSeoPage() {
+  const college = getSeoSelectedCollege();
+  const page = getSeoSelectedPage();
 
-  const college =
-    getSeoSelectedCollege();
-
-  const page =
-    getSeoSelectedPage();
-
-  if (
-    !college ||
-    !page
-  ) {
-
+  if (!college || !page) {
     resetSeoEditor();
-
     return;
   }
 
-  $("seoEditorPanel")
-    .style.display =
-    "block";
+  $("seoEditorPanel").style.display = "block";
+  $("seoEmptyState").style.display = "none";
 
-  $("seoEmptyState")
-    .style.display =
-    "none";
-
-  $("seoEditorTitle")
-    .textContent =
-    `${college.name} · ${page.name}`;
-
-  $("seoEditorSubtitle")
-    .textContent =
+  $("seoEditorTitle").textContent = `${college.name} · ${page.name}`;
+  $("seoEditorSubtitle").textContent =
     "Update page-level SEO details independently from the content editor.";
+  $("seoPageCategory").textContent =
+    getCategoryLabel(getPageCategory(page, college));
 
-  $("seoPageCategory")
-    .textContent =
-    getCategoryLabel(
-      getPageCategory(
-        page,
-        college
-      )
-    );
-
-  $("seoHeaderTitle")
-    .value =
-    getPageHeaderTitle(
-      page
-    );
-
-  $("seoTitle")
-    .value =
-    getPageSeoTitle(
-      page
-    );
-
-  $("seoDescription")
-    .value =
-    getPageSeoDescription(
-      page
-    );
-
-  $("seoKeywords")
-    .value =
-    getPageSeoKeywords(
-      page
-    );
+  $("seoHeaderTitle").value = getPageHeaderTitle(page);
+  $("seoTitle").value = getPageSeoTitle(page);
+  $("seoDescription").value = getPageSeoDescription(page);
+  $("seoKeywords").value = getPageSeoKeywords(page);
 
   updateSeoPreview();
 }
 
 function updateSeoPreview() {
+  const title = $("seoTitle").value.trim();
+  const description = $("seoDescription").value.trim();
 
-  const title =
-    $("seoTitle")
-      .value
-      .trim();
+  $("seoTitleCount").textContent = `${title.length} characters`;
+  $("seoDescriptionCount").textContent = `${description.length} characters`;
 
-  const description =
-    $("seoDescription")
-      .value
-      .trim();
+  const college = getSeoSelectedCollege();
+  const page = getSeoSelectedPage();
 
-  $("seoTitleCount")
-    .textContent =
-    `${title.length} characters`;
-
-  $("seoDescriptionCount")
-    .textContent =
-    `${description.length} characters`;
-
-  const college =
-    getSeoSelectedCollege();
-
-  const page =
-    getSeoSelectedPage();
-
-  if (
-    college &&
-    page
-  ) {
-
-    $("seoPreviewUrl")
-      .textContent =
-      getPageUrl(
-        college,
-        page
-      );
+  if (college && page) {
+    $("seoPreviewUrl").textContent = getPageUrl(college, page);
   }
 
-  $("seoPreviewTitle")
-    .textContent =
-    title ||
-    page?.name ||
-    "SEO Title";
+  $("seoPreviewTitle").textContent =
+    title || page?.name || "SEO Title";
 
-  $("seoPreviewDescription")
-    .textContent =
-    description ||
-    "SEO description will appear here.";
+  $("seoPreviewDescription").textContent =
+    description || "SEO description will appear here.";
 }
 
 function buildSeoPayload() {
-
   return {
-
-    headerTitle:
-      $("seoHeaderTitle")
-        .value
-        .trim(),
-
-    title:
-      $("seoTitle")
-        .value
-        .trim(),
-
-    description:
-      $("seoDescription")
-        .value
-        .trim(),
-
-    keywords:
-      $("seoKeywords")
-        .value
-        .split(",")
-        .map(
-          (keyword) =>
-            keyword.trim()
-        )
-        .filter(Boolean)
-
+    headerTitle: $("seoHeaderTitle").value.trim(),
+    title: $("seoTitle").value.trim(),
+    description: $("seoDescription").value.trim(),
+    keywords: $("seoKeywords").value
+      .split(",")
+      .map((keyword) => keyword.trim())
+      .filter(Boolean)
   };
 }
 
 async function saveSeoDraft() {
-
-  if (
-    !seoCollegeId ||
-    !seoPageId
-  ) {
-
-    showNotice(
-      "Please select a college and page first."
-    );
-
+  if (!seoCollegeId || !seoPageId) {
+    showNotice("Please select a college and page first.");
     return;
   }
 
-  const button =
-    $("saveSeoBtn");
-
-  const originalText =
-    button.textContent;
+  const button = $("saveSeoBtn");
+  const originalText = button.textContent;
 
   try {
+    button.disabled = true;
+    button.textContent = "Saving...";
 
-    button.disabled =
-      true;
+    const pageId = `${seoCollegeId}:${seoPageId}`;
+    const seo = buildSeoPayload();
 
-    button.textContent =
-      "Saving...";
-
-    const pageId =
-      `${seoCollegeId}:${seoPageId}`;
-
-    const seo =
-      buildSeoPayload();
-
-    await api(
-      "/api/page/" +
-      encodeURIComponent(
-        pageId
-      ) +
-      "/seo",
-      {
-        method:
-          "PUT",
-
-        headers: {
-          "Content-Type":
-            "application/json"
-        },
-
-        body:
-          JSON.stringify({
-            seo
-          })
-      }
-    );
+    await api("/api/page/" + encodeURIComponent(pageId) + "/seo", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ seo })
+    });
 
     await load();
 
-    $("seoCollegeSelect")
-      .value =
-      seoCollegeId;
-
+    // Restore the active SEO selection after the data refresh.
+    $("seoCollegeSelect").value = seoCollegeId;
     populateSeoPages();
-
-    $("seoPageSelect")
-      .value =
-      seoPageId;
-
+    $("seoPageSelect").value = seoPageId;
     loadSeoPage();
 
-    showNotice(
-      "SEO draft saved successfully.",
-      "success"
-    );
-
+    showNotice("SEO draft saved successfully.", "success");
   } catch (error) {
-
     showNotice(
       error.message ||
       "Unable to save SEO details. Please check that the SEO API endpoint is available."
     );
-
   } finally {
-
-    button.disabled =
-      false;
-
-    button.textContent =
-      originalText;
+    button.disabled = false;
+    button.textContent = originalText;
   }
 }
 
 async function publishSeoChanges() {
-
-  if (
-    !seoCollegeId ||
-    !seoPageId
-  ) {
-
-    showNotice(
-      "Please select a college and page first."
-    );
-
+  if (!seoCollegeId || !seoPageId) {
+    showNotice("Please select a college and page first.");
     return;
   }
 
-  const button =
-    $("publishSeoBtn");
-
-  const originalText =
-    button.textContent;
+  const button = $("publishSeoBtn");
+  const originalText = button.textContent;
 
   try {
+    button.disabled = true;
+    button.textContent = "Publishing...";
 
-    button.disabled =
-      true;
+    // Save the latest form values before publishing.
+    const pageId = `${seoCollegeId}:${seoPageId}`;
+    const seo = buildSeoPayload();
 
-    button.textContent =
-      "Publishing...";
+    await api("/api/page/" + encodeURIComponent(pageId) + "/seo", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ seo })
+    });
 
-    const pageId =
-      `${seoCollegeId}:${seoPageId}`;
-
-    const seo =
-      buildSeoPayload();
-
-    await api(
-      "/api/page/" +
-      encodeURIComponent(
-        pageId
-      ) +
-      "/seo",
-      {
-        method:
-          "PUT",
-
-        headers: {
-          "Content-Type":
-            "application/json"
-        },
-
-        body:
-          JSON.stringify({
-            seo
-          })
-      }
+    const result = await api(
+      "/api/page/" + encodeURIComponent(pageId) + "/publish",
+      { method: "POST" }
     );
-
-    const result =
-      await api(
-        "/api/page/" +
-        encodeURIComponent(
-          pageId
-        ) +
-        "/publish",
-        {
-          method:
-            "POST"
-        }
-      );
 
     await load();
 
-    $("seoCollegeSelect")
-      .value =
-      seoCollegeId;
-
+    $("seoCollegeSelect").value = seoCollegeId;
     populateSeoPages();
-
-    $("seoPageSelect")
-      .value =
-      seoPageId;
-
+    $("seoPageSelect").value = seoPageId;
     loadSeoPage();
 
     showNotice(
-      result.message ||
-      "SEO changes published successfully.",
+      result.message || "SEO changes published successfully.",
       "success"
     );
-
   } catch (error) {
-
     showNotice(
       error.message ||
       "Unable to publish SEO changes. Please check the API endpoint."
     );
-
   } finally {
-
-    button.disabled =
-      false;
-
-    button.textContent =
-      originalText;
+    button.disabled = false;
+    button.textContent = originalText;
   }
 }
+
 
 /* ==============================
    STRUCTURE MIRROR EDITOR
 ================================ */
 
+/*
+  These selectors identify meaningful frontend blocks. The original HTML is
+  preserved; CMS wrappers are added only inside the editor and removed on save.
+*/
 const BLOCK_SELECTORS = [
-
   "section",
   "table",
   ".table-wrapper",
@@ -3514,307 +2065,123 @@ const BLOCK_SELECTORS = [
   ".faq-item",
   ".pro-box",
   ".warning-box"
-
 ].join(",");
 
 const EDITABLE_TEXT_SELECTOR = [
-
-  "h1",
-  "h2",
-  "h3",
-  "h4",
-  "h5",
-  "h6",
-  "p",
-  "li",
-  "blockquote",
-  "a",
-  "span",
-  "strong",
-  "em",
-  "b",
-  "i",
-  "small",
-  "label",
-  "td",
-  "th",
-  "figcaption",
-  "caption",
-  "dt",
-  "dd"
-
+  "h1","h2","h3","h4","h5","h6",
+  "p","li","blockquote","a","span","strong","em","b","i","small","label",
+  "td","th","figcaption","caption","dt","dd"
 ].join(",");
 
+// The Structure Mirror should allow editing anywhere the page contains visible content.
+// These are CMS controls or interactive frontend controls that must stay functional.
 const NON_EDITABLE_SELECTOR = [
-
-  "script",
-  "style",
-  "link",
-  "meta",
-  "base",
-  "noscript",
-  "template",
-
-  "iframe",
-  "object",
-  "embed",
-
-  "button",
-  "input",
-  "select",
-  "textarea",
-  "option",
-  "form",
-
-  ".cms-section-label",
-  ".cms-section-edit"
-
+  "script","style","link","meta","base","noscript","template",
+  "iframe","object","embed",
+  "button","input","select","textarea","option","form",
+  ".cms-section-label",".cms-section-edit"
 ].join(",");
 
 async function edit(id) {
-
   try {
+    const result = await api("/api/page/" + encodeURIComponent(id));
 
-    const result =
-      await api(
-        "/api/page/" +
-        encodeURIComponent(id)
-      );
+    current = id;
+    currentCollegeId = result.college.id;
+    currentPageId = result.page.id;
 
-    current =
-      id;
+    const doc = new DOMParser().parseFromString(result.html, "text/html");
 
-    currentCollegeId =
-      result.college.id;
+    // Keep an untouched copy for comparison mode.
+    originalBodyHTML = doc.body.innerHTML;
 
-    currentPageId =
-      result.page.id;
-
-    const doc =
-      new DOMParser()
-        .parseFromString(
-          result.html,
-          "text/html"
-        );
-
-    originalBodyHTML =
-      doc.body.innerHTML;
-
-    /*
-      IMPORTANT:
-      Keep these IDs exactly as they are.
-      They are used when opening the editor.
-    */
-
-    $("editorTitle")
-      .textContent =
-      `${result.college.name} · ${result.page.name}`;
-
-    $("editorSubtitle")
-      .textContent =
+    $("editorTitle").textContent = `${result.college.name} · ${result.page.name}`;
+    $("editorSubtitle").textContent =
       "Structure Mirror: frontend sections, tables, cards and content boxes remain visually recognisable.";
 
-    renderStructuredEditor(
-      doc.body.innerHTML
-    );
-
+    renderStructuredEditor(doc.body.innerHTML);
     showEditor(true);
-
-    setEditorMode(
-      "edit"
-    );
-
+    setEditorMode("edit");
   } catch (error) {
-
-    showNotice(
-      error.message ||
-      "Unable to open this page."
-    );
+    showNotice(error.message || "Unable to open this page.");
   }
 }
 
-function renderStructuredEditor(
-  html
-) {
+function renderStructuredEditor(html) {
+  const container = document.createElement("div");
+  container.innerHTML = html;
 
-  const container =
-    document.createElement(
-      "div"
-    );
+  // Normalise only display behaviour inside the CMS. The original HTML,
+  // attributes and classes are still preserved for saving and publishing.
+  normaliseFrontendStructure(container);
 
-  container.innerHTML =
-    html;
+  // Add CMS wrappers to top-level content and meaningful frontend blocks.
+  const topNodes = Array.from(container.childNodes);
 
-  normaliseFrontendStructure(
-    container
-  );
+  topNodes.forEach((node) => {
+    if (node.nodeType === Node.TEXT_NODE && !node.textContent.trim()) return;
 
-  const topNodes =
-    Array.from(
-      container.childNodes
-    );
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      decorateEditableElements(node);
 
-  topNodes.forEach(
-    (node) => {
-
-      if (
-        node.nodeType ===
-          Node.TEXT_NODE &&
-        !node.textContent.trim()
-      ) {
-
-        return;
-      }
-
-      if (
-        node.nodeType ===
-        Node.ELEMENT_NODE
-      ) {
-
-        decorateEditableElements(
-          node
-        );
-
-        if (
-          shouldWrapAsSection(
-            node
-          )
-        ) {
-
-          wrapAsCmsSection(
-            node
-          );
-
-        } else {
-
-          wrapAsCmsSection(
-            node,
-            "Content block"
-          );
-        }
+      if (shouldWrapAsSection(node)) {
+        wrapAsCmsSection(node);
+      } else {
+        // If a top-level node is not one of the recognised block types,
+        // it still gets a safe editorial wrapper for easier comparison.
+        wrapAsCmsSection(node, "Content block");
       }
     }
-  );
+  });
 
-  $("visualEditor")
-    .innerHTML =
-    container.innerHTML;
+  $("visualEditor").innerHTML = container.innerHTML;
 
-  const editorRoot =
-    $("visualEditor");
+  // Enable direct editing across the complete mirrored page, not only selected tags.
+  // Individual CMS labels and real form controls remain protected.
+  const editorRoot = $("visualEditor");
+  enableWholePageEditing(editorRoot);
 
-  enableWholePageEditing(
-    editorRoot
-  );
-
-  prepareEditorInteractions(
-    editorRoot
-  );
-
+  // Keep semantic text elements highlighted for easier visual editing.
+  prepareEditorInteractions(editorRoot);
   updateCompareViews();
 }
 
-function normaliseFrontendStructure(
-  root
-) {
+/* =================================
+   FRONTEND STRUCTURE NORMALISATION
+   This prevents inherited frontend CSS from flattening semantic HTML.
+================================= */
+function normaliseFrontendStructure(root) {
+  root.querySelectorAll("table").forEach((table) => {
+    table.classList.add("cms-real-table");
 
-  root
-    .querySelectorAll(
-      "table"
-    )
-    .forEach(
-      (table) => {
+    // Remove only inline display styles that can flatten the table.
+    // We do not remove classes or semantic attributes.
+    [table, ...table.querySelectorAll("thead,tbody,tfoot,tr,th,td")].forEach((el) => {
+      if (el.style && el.style.display) el.style.removeProperty("display");
+    });
+  });
 
-        table.classList.add(
-          "cms-real-table"
-        );
+  // Navigation or link clusters often appear as a sequence of inline links.
+  // Mark them so the editor presents each link separately and clearly.
+  root.querySelectorAll("div,nav,section,p").forEach((el) => {
+    if (el.closest("table")) return;
+    const directLinks = Array.from(el.children).filter((child) => child.tagName === "A");
+    if (directLinks.length >= 2) {
+      el.classList.add("cms-link-group");
+    }
+  });
 
-        [
-          table,
-          ...table.querySelectorAll(
-            "thead,tbody,tfoot,tr,th,td"
-          )
-        ].forEach(
-          (el) => {
-
-            if (
-              el.style &&
-              el.style.display
-            ) {
-
-              el.style
-                .removeProperty(
-                  "display"
-                );
-            }
-          }
-        );
-      }
-    );
-
-  root
-    .querySelectorAll(
-      "div,nav,section,p"
-    )
-    .forEach(
-      (el) => {
-
-        if (
-          el.closest("table")
-        ) {
-
-          return;
-        }
-
-        const directLinks =
-          Array.from(
-            el.children
-          )
-          .filter(
-            (child) =>
-              child.tagName ===
-              "A"
-          );
-
-        if (
-          directLinks.length >= 2
-        ) {
-
-          el.classList.add(
-            "cms-link-group"
-          );
-        }
-      }
-    );
-
-  root
-    .querySelectorAll("a")
-    .forEach(
-      (link) => {
-
-        link.setAttribute(
-          "data-cms-link",
-          "true"
-        );
-      }
-    );
+  // If a page contains a labelled navigation paragraph followed by several
+  // links without separators, make only that paragraph readable in the CMS.
+  root.querySelectorAll("a").forEach((link) => {
+    link.setAttribute("data-cms-link", "true");
+  });
 }
 
-function shouldWrapAsSection(
-  element
-) {
-
-  if (
-    element.matches(
-      "section, table"
-    )
-  ) {
-
-    return true;
-  }
+function shouldWrapAsSection(element) {
+  if (element.matches("section, table")) return true;
 
   return [
-
     "table-wrapper",
     "programme-fee-table",
     "notice",
@@ -3827,1015 +2194,349 @@ function shouldWrapAsSection(
     "faq-item",
     "pro-box",
     "warning-box"
-
-  ].some(
-    (className) =>
-      element.classList.contains(
-        className
-      )
-  );
+  ].some((className) => element.classList.contains(className));
 }
 
-function getBlockLabel(
-  element,
-  fallback = "Section"
-) {
-
-  if (
-    element.matches(
-      "section"
-    )
-  ) {
-
-    const heading =
-      element.querySelector(
-        "h1,h2,h3"
-      );
-
-    return heading
-      ? heading.textContent
-          .trim()
-          .slice(
-            0,
-            70
-          )
-      : "Section";
+function getBlockLabel(element, fallback = "Section") {
+  if (element.matches("section")) {
+    const heading = element.querySelector("h1,h2,h3");
+    return heading ? heading.textContent.trim().slice(0, 70) : "Section";
   }
 
-  if (
-    element.matches("table") ||
-    element.querySelector("table")
-  ) {
-
-    return "Table";
-  }
-
-  if (
-    element.classList.contains(
-      "notice"
-    )
-  ) {
-
-    return "Notice / Update";
-  }
-
-  if (
-    element.classList.contains(
-      "reality-box"
-    )
-  ) {
-
-    return "Reality Check";
-  }
-
-  if (
-    element.classList.contains(
-      "faq-item"
-    )
-  ) {
-
-    return "FAQ";
-  }
-
-  if (
-    element.classList.contains(
-      "programme-nav-grid"
-    )
-  ) {
-
-    return "Programme Cards";
-  }
-
-  if (
-    element.classList.contains(
-      "highlight-grid"
-    )
-  ) {
-
-    return "Highlights";
-  }
-
-  if (
-    element.classList.contains(
-      "pro-box"
-    )
-  ) {
-
-    return "Key Advantage";
-  }
-
-  if (
-    element.classList.contains(
-      "warning-box"
-    )
-  ) {
-
-    return "Important Warning";
-  }
+  if (element.matches("table") || element.querySelector("table")) return "Table";
+  if (element.classList.contains("notice")) return "Notice / Update";
+  if (element.classList.contains("reality-box")) return "Reality Check";
+  if (element.classList.contains("faq-item")) return "FAQ";
+  if (element.classList.contains("programme-nav-grid")) return "Programme Cards";
+  if (element.classList.contains("highlight-grid")) return "Highlights";
+  if (element.classList.contains("pro-box")) return "Key Advantage";
+  if (element.classList.contains("warning-box")) return "Important Warning";
 
   return fallback;
 }
 
-function wrapAsCmsSection(
-  element,
-  fallbackLabel = "Section"
-) {
+function wrapAsCmsSection(element, fallbackLabel = "Section") {
+  // Avoid double-wrapping elements that are already wrapped.
+  if (element.parentElement?.classList?.contains("cms-section")) return;
 
-  if (
-    element.parentElement
-      ?.classList
-      ?.contains(
-        "cms-section"
-      )
-  ) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "cms-section";
+  wrapper.setAttribute("data-cms-wrapper", "true");
 
-    return;
-  }
+  const label = document.createElement("div");
+  label.className = "cms-section-label";
+  label.setAttribute("contenteditable", "false");
+  label.innerHTML = `${escapeHtml(getBlockLabel(element, fallbackLabel))}<span>STRUCTURE</span>`;
 
-  const wrapper =
-    document.createElement(
-      "div"
-    );
+  const editButton = document.createElement("button");
+  editButton.type = "button";
+  editButton.className = "cms-section-edit";
+  editButton.textContent = "Edit section";
+  editButton.setAttribute("contenteditable", "false");
 
-  wrapper.className =
-    "cms-section";
+  editButton.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    enableSectionEditing(wrapper);
+  });
 
-  wrapper.setAttribute(
-    "data-cms-wrapper",
-    "true"
-  );
-
-  const label =
-    document.createElement(
-      "div"
-    );
-
-  label.className =
-    "cms-section-label";
-
-  label.setAttribute(
-    "contenteditable",
-    "false"
-  );
-
-  label.innerHTML =
-    `${escapeHtml(
-      getBlockLabel(
-        element,
-        fallbackLabel
-      )
-    )}<span>STRUCTURE</span>`;
-
-  const editButton =
-    document.createElement(
-      "button"
-    );
-
-  editButton.type =
-    "button";
-
-  editButton.className =
-    "cms-section-edit";
-
-  editButton.textContent =
-    "Edit section";
-
-  editButton.setAttribute(
-    "contenteditable",
-    "false"
-  );
-
-  editButton.addEventListener(
-    "click",
-    (event) => {
-
-      event.preventDefault();
-
-      event.stopPropagation();
-
-      enableSectionEditing(
-        wrapper
-      );
-    }
-  );
-
-  element.parentNode
-    .insertBefore(
-      wrapper,
-      element
-    );
-
-  wrapper.appendChild(
-    label
-  );
-
-  wrapper.appendChild(
-    editButton
-  );
-
-  wrapper.appendChild(
-    element
-  );
+  element.parentNode.insertBefore(wrapper, element);
+  wrapper.appendChild(label);
+  wrapper.appendChild(editButton);
+  wrapper.appendChild(element);
 }
 
-function enableWholePageEditing(
-  root
-) {
+function enableWholePageEditing(root) {
+  root.classList.add("cms-editing-root");
+  root.setAttribute("contenteditable", "true");
 
-  root.classList.add(
-    "cms-editing-root"
-  );
-
-  root.setAttribute(
-    "contenteditable",
-    "true"
-  );
-
-  root
-    .querySelectorAll(
-      NON_EDITABLE_SELECTOR
-    )
-    .forEach(
-      (element) => {
-
-        element.setAttribute(
-          "contenteditable",
-          "false"
-        );
-      }
-    );
+  root.querySelectorAll(NON_EDITABLE_SELECTOR).forEach((element) => {
+    element.setAttribute("contenteditable", "false");
+  });
 }
 
-function setWholePageEditing(
-  enabled
-) {
+function setWholePageEditing(enabled) {
+  const root = $("visualEditor");
+  root.setAttribute("contenteditable", enabled ? "true" : "false");
 
-  const root =
-    $("visualEditor");
-
-  root.setAttribute(
-    "contenteditable",
-    enabled
-      ? "true"
-      : "false"
-  );
-
-  root
-    .querySelectorAll(
-      NON_EDITABLE_SELECTOR
-    )
-    .forEach(
-      (element) => {
-
-        element.setAttribute(
-          "contenteditable",
-          "false"
-        );
-      }
-    );
+  root.querySelectorAll(NON_EDITABLE_SELECTOR).forEach((element) => {
+    element.setAttribute("contenteditable", "false");
+  });
 }
 
-function decorateEditableElements(
-  root
-) {
-
+function decorateEditableElements(root) {
   const elements = [];
 
-  if (
-    root.matches &&
-    root.matches(
-      EDITABLE_TEXT_SELECTOR
-    )
-  ) {
+  if (root.matches && root.matches(EDITABLE_TEXT_SELECTOR)) elements.push(root);
+  root.querySelectorAll?.(EDITABLE_TEXT_SELECTOR).forEach((element) => elements.push(element));
 
-    elements.push(
-      root
-    );
-  }
+  elements.forEach((element) => {
+    element.classList.add("cms-editable");
 
-  root
-    .querySelectorAll?.(
-      EDITABLE_TEXT_SELECTOR
-    )
-    .forEach(
-      (element) =>
-        elements.push(
-          element
-        )
-    );
-
-  elements.forEach(
-    (element) => {
-
-      element.classList.add(
-        "cms-editable"
-      );
-
-      if (
-        element.matches(
-          "td,th"
-        )
-      ) {
-
-        element.classList.add(
-          "cms-table-cell"
-        );
-      }
-
-      element.setAttribute(
-        "contenteditable",
-        "true"
-      );
-
-      element.addEventListener(
-        "focus",
-        () => {
-
-          if (
-            element.matches(
-              "td,th"
-            )
-          ) {
-
-            selectedTableCell =
-              element;
-          }
-        }
-      );
-
-      element.addEventListener(
-        "input",
-        () => {
-
-          if (
-            editorMode ===
-            "compare"
-          ) {
-
-            updateCompareViews();
-          }
-        }
-      );
+    if (element.matches("td,th")) {
+      element.classList.add("cms-table-cell");
     }
-  );
+
+    element.setAttribute("contenteditable", "true");
+
+    element.addEventListener("focus", () => {
+      if (element.matches("td,th")) selectedTableCell = element;
+    });
+
+    element.addEventListener("input", () => {
+      if (editorMode === "compare") updateCompareViews();
+    });
+  });
 }
 
-function prepareEditorInteractions(
-  root
-) {
+function prepareEditorInteractions(root) {
+  root.querySelectorAll("a").forEach((link) => {
+    link.addEventListener("click", (event) => {
+      // Links must never navigate away while editing or comparing.
+      event.preventDefault();
+    });
+  });
 
-  root
-    .querySelectorAll("a")
-    .forEach(
-      (link) => {
-
-        link.addEventListener(
-          "click",
-          (event) => {
-
-            event.preventDefault();
-          }
-        );
-      }
-    );
-
-  root.addEventListener(
-    "click",
-    (event) => {
-
-      const cell =
-        event.target.closest(
-          "td,th"
-        );
-
-      if (cell) {
-
-        selectedTableCell =
-          cell;
-      }
-    }
-  );
+  root.addEventListener("click", (event) => {
+    const cell = event.target.closest("td,th");
+    if (cell) selectedTableCell = cell;
+  });
 }
 
-function enableSectionEditing(
-  section
-) {
+function enableSectionEditing(section) {
+  section.querySelectorAll(".cms-editable").forEach((element) => {
+    element.setAttribute("contenteditable", "true");
+  });
 
-  section
-    .querySelectorAll(
-      ".cms-editable"
-    )
-    .forEach(
-      (element) => {
-
-        element.setAttribute(
-          "contenteditable",
-          "true"
-        );
-      }
-    );
-
-  section.scrollIntoView(
-    {
-      behavior:
-        "smooth",
-
-      block:
-        "center"
-    }
-  );
-
-  showNotice(
-    "Section is ready for editing.",
-    "success"
-  );
+  section.scrollIntoView({ behavior: "smooth", block: "center" });
+  showNotice("Section is ready for editing.", "success");
 }
 
 /* ==============================
    EDITOR MODES
 ================================ */
+function setEditorMode(mode) {
+  editorMode = mode;
 
-function setEditorMode(
-  mode
-) {
+  $("editModeBtn").classList.toggle("active", mode === "edit");
+  $("previewModeBtn").classList.toggle("active", mode === "preview");
+  $("compareModeBtn").classList.toggle("active", mode === "compare");
 
-  editorMode =
-    mode;
+  $("editorStage").style.display = mode === "compare" ? "none" : "block";
+  $("compareStage").style.display = mode === "compare" ? "grid" : "none";
 
-  $("editModeBtn")
-    .classList
-    .toggle(
-      "active",
-      mode ===
-      "edit"
-    );
+  const editorView = $("visualEditor");
+  const stage = $("editorStage");
 
-  $("previewModeBtn")
-    .classList
-    .toggle(
-      "active",
-      mode ===
-      "preview"
-    );
+  stage.classList.toggle("preview-mode", mode === "preview");
 
-  $("compareModeBtn")
-    .classList
-    .toggle(
-      "active",
-      mode ===
-      "compare"
-    );
-
-  $("editorStage")
-    .style.display =
-    mode ===
-    "compare"
-      ? "none"
-      : "block";
-
-  $("compareStage")
-    .style.display =
-    mode ===
-    "compare"
-      ? "grid"
-      : "none";
-
-  const editorView =
-    $("visualEditor");
-
-  const stage =
-    $("editorStage");
-
-  stage.classList.toggle(
-    "preview-mode",
-    mode ===
-    "preview"
-  );
-
-  if (
-    mode ===
-    "preview"
-  ) {
-
-    setWholePageEditing(
-      false
-    );
-
-    editorView
-      .querySelectorAll(
-        ".cms-editable"
-      )
-      .forEach(
-        (element) => {
-
-          element.setAttribute(
-            "contenteditable",
-            "false"
-          );
-        }
-      );
-
+  if (mode === "preview") {
+    setWholePageEditing(false);
+    editorView.querySelectorAll(".cms-editable").forEach((element) => {
+      element.setAttribute("contenteditable", "false");
+    });
   } else {
-
-    setWholePageEditing(
-      true
-    );
-
-    editorView
-      .querySelectorAll(
-        ".cms-editable"
-      )
-      .forEach(
-        (element) => {
-
-          element.setAttribute(
-            "contenteditable",
-            "true"
-          );
-        }
-      );
-
-    editorView
-      .querySelectorAll(
-        NON_EDITABLE_SELECTOR
-      )
-      .forEach(
-        (element) => {
-
-          element.setAttribute(
-            "contenteditable",
-            "false"
-          );
-        }
-      );
+    setWholePageEditing(true);
+    editorView.querySelectorAll(".cms-editable").forEach((element) => {
+      element.setAttribute("contenteditable", "true");
+    });
+    editorView.querySelectorAll(NON_EDITABLE_SELECTOR).forEach((element) => {
+      element.setAttribute("contenteditable", "false");
+    });
   }
 
-  if (
-    mode ===
-    "compare"
-  ) {
-
+  if (mode === "compare") {
     updateCompareViews();
   }
 }
 
 function updateCompareViews() {
+  const currentClone = $("visualEditor").cloneNode(true);
 
-  const currentClone =
-    $("visualEditor")
-      .cloneNode(true);
+  // Remove CMS-only wrappers/controls from the comparison copy.
+  cleanCmsMarkup(currentClone);
 
-  cleanCmsMarkup(
-    currentClone
-  );
-
-  $("compareEditor")
-    .innerHTML =
-    currentClone.innerHTML;
-
-  $("compareOriginal")
-    .innerHTML =
-    originalBodyHTML;
+  $("compareEditor").innerHTML = currentClone.innerHTML;
+  $("compareOriginal").innerHTML = originalBodyHTML;
 }
 
 /*
-  Removes CMS wrappers while retaining
-  their frontend child content.
+  Removes CMS wrappers while retaining their frontend child content.
+  This ensures the saved page does not contain editor labels or buttons.
 */
-function cleanCmsMarkup(
-  root
-) {
+function cleanCmsMarkup(root) {
+  root.querySelectorAll(".cms-section").forEach((wrapper) => {
+    const parent = wrapper.parentNode;
 
-  root
-    .querySelectorAll(
-      ".cms-section"
-    )
-    .forEach(
-      (wrapper) => {
-
-        const parent =
-          wrapper.parentNode;
-
-        Array.from(
-          wrapper.childNodes
-        ).forEach(
-          (child) => {
-
-            if (
-              child.nodeType ===
-                Node.ELEMENT_NODE &&
-              (
-                child.classList
-                  .contains(
-                    "cms-section-label"
-                  ) ||
-                child.classList
-                  .contains(
-                    "cms-section-edit"
-                  )
-              )
-            ) {
-
-              return;
-            }
-
-            parent.insertBefore(
-              child.cloneNode(
-                true
-              ),
-              wrapper
-            );
-          }
-        );
-
-        parent.removeChild(
-          wrapper
-        );
+    Array.from(wrapper.childNodes).forEach((child) => {
+      if (
+        child.nodeType === Node.ELEMENT_NODE &&
+        (child.classList.contains("cms-section-label") ||
+         child.classList.contains("cms-section-edit"))
+      ) {
+        return;
       }
-    );
 
-  root
-    .querySelectorAll(
-      ".cms-editable"
-    )
-    .forEach(
-      (element) => {
+      parent.insertBefore(child.cloneNode(true), wrapper);
+    });
 
-        element.classList.remove(
-          "cms-editable",
-          "cms-table-cell"
-        );
+    parent.removeChild(wrapper);
+  });
 
-        element.removeAttribute(
-          "spellcheck"
-        );
-      }
-    );
+  root.querySelectorAll(".cms-editable").forEach((element) => {
+    element.classList.remove("cms-editable", "cms-table-cell");
+    element.removeAttribute("spellcheck");
+  });
 
-  root.removeAttribute(
-    "contenteditable"
-  );
+  // Whole-page editing adds contenteditable to many frontend nodes. Never save
+  // those editor-only attributes back to the live website.
+  root.removeAttribute("contenteditable");
+  root.classList.remove("cms-editing-root");
+  root.querySelectorAll("[contenteditable]").forEach((element) => {
+    element.removeAttribute("contenteditable");
+    element.removeAttribute("spellcheck");
+  });
 
-  root.classList.remove(
-    "cms-editing-root"
-  );
+  root.querySelectorAll("[data-cms-wrapper]").forEach((element) => {
+    element.removeAttribute("data-cms-wrapper");
+  });
 
-  root
-    .querySelectorAll(
-      "[contenteditable]"
-    )
-    .forEach(
-      (element) => {
-
-        element.removeAttribute(
-          "contenteditable"
-        );
-
-        element.removeAttribute(
-          "spellcheck"
-        );
-      }
-    );
-
-  root
-    .querySelectorAll(
-      "[data-cms-wrapper]"
-    )
-    .forEach(
-      (element) => {
-
-        element.removeAttribute(
-          "data-cms-wrapper"
-        );
-      }
-    );
-
-  root
-    .querySelectorAll(
-      ".cms-section-label,.cms-section-edit"
-    )
-    .forEach(
-      (element) => {
-
-        element.remove();
-      }
-    );
+  root.querySelectorAll(".cms-section-label,.cms-section-edit").forEach((element) => {
+    element.remove();
+  });
 }
 
 /* ==============================
    TABLE CONTROLS
 ================================ */
-
 function getActiveTable() {
+  if (selectedTableCell) return selectedTableCell.closest("table");
 
-  if (
-    selectedTableCell
-  ) {
+  const selection = window.getSelection();
+  if (selection && selection.anchorNode) {
+    const node = selection.anchorNode.nodeType === Node.ELEMENT_NODE
+      ? selection.anchorNode
+      : selection.anchorNode.parentElement;
 
-    return selectedTableCell
-      .closest(
-        "table"
-      );
-  }
-
-  const selection =
-    window.getSelection();
-
-  if (
-    selection &&
-    selection.anchorNode
-  ) {
-
-    const node =
-      selection.anchorNode
-        .nodeType ===
-      Node.ELEMENT_NODE
-
-        ? selection.anchorNode
-
-        : selection
-            .anchorNode
-            .parentElement;
-
-    return node?.closest(
-      "table"
-    );
+    return node?.closest("table");
   }
 
   return null;
 }
 
 function addTableRow() {
-
-  const table =
-    getActiveTable();
+  const table = getActiveTable();
 
   if (!table) {
-
-    showNotice(
-      "Click inside a table first, then add a row."
-    );
-
+    showNotice("Click inside a table first, then add a row.");
     return;
   }
 
-  const body =
-    table.tBodies[0] ||
-    table;
-
-  const referenceRow =
-    table.rows[
-      table.rows.length - 1
-    ];
+  const body = table.tBodies[0] || table;
+  const referenceRow = table.rows[table.rows.length - 1];
 
   if (!referenceRow) {
-
-    showNotice(
-      "This table does not contain a row to copy."
-    );
-
+    showNotice("This table does not contain a row to copy.");
     return;
   }
 
-  const newRow =
-    referenceRow
-      .cloneNode(true);
+  const newRow = referenceRow.cloneNode(true);
 
-  Array.from(
-    newRow.cells
-  ).forEach(
-    (cell) => {
+  Array.from(newRow.cells).forEach((cell) => {
+    cell.textContent = "";
+    cell.classList.add("cms-editable", "cms-table-cell");
+    cell.setAttribute("contenteditable", "true");
+    cell.addEventListener("focus", () => selectedTableCell = cell);
+  });
 
-      cell.textContent =
-        "";
-
-      cell.classList.add(
-        "cms-editable",
-        "cms-table-cell"
-      );
-
-      cell.setAttribute(
-        "contenteditable",
-        "true"
-      );
-
-      cell.addEventListener(
-        "focus",
-        () =>
-          selectedTableCell =
-            cell
-      );
-    }
-  );
-
-  body.appendChild(
-    newRow
-  );
-
-  selectedTableCell =
-    newRow.cells[0] ||
-    null;
+  body.appendChild(newRow);
+  selectedTableCell = newRow.cells[0] || null;
 }
 
 function deleteTableRow() {
+  const table = getActiveTable();
 
-  const table =
-    getActiveTable();
-
-  if (
-    !table ||
-    !selectedTableCell
-  ) {
-
-    showNotice(
-      "Click inside the table row you want to delete."
-    );
-
+  if (!table || !selectedTableCell) {
+    showNotice("Click inside the table row you want to delete.");
     return;
   }
 
-  const row =
-    selectedTableCell
-      .closest(
-        "tr"
-      );
+  const row = selectedTableCell.closest("tr");
 
-  if (
-    table.rows.length <=
-    1
-  ) {
-
-    showNotice(
-      "A table must contain at least one row."
-    );
-
+  if (table.rows.length <= 1) {
+    showNotice("A table must contain at least one row.");
     return;
   }
 
-  if (
-    !confirm(
-      "Delete this table row?"
-    )
-  ) {
-
-    return;
-  }
+  if (!confirm("Delete this table row?")) return;
 
   row.remove();
-
-  selectedTableCell =
-    null;
+  selectedTableCell = null;
 }
 
 /* ==============================
    SAVE / PUBLISH
 ================================ */
-
 function buildCleanPageHTML() {
-
-  const clone =
-    $("visualEditor")
-      .cloneNode(true);
-
-  cleanCmsMarkup(
-    clone
-  );
+  const clone = $("visualEditor").cloneNode(true);
+  cleanCmsMarkup(clone);
 
   return clone.innerHTML;
 }
 
 async function save() {
+  if (!current) throw new Error("No page is currently open.");
 
-  if (!current) {
+  const old = await api("/api/page/" + encodeURIComponent(current));
+  const doc = new DOMParser().parseFromString(old.html, "text/html");
 
-    throw new Error(
-      "No page is currently open."
-    );
-  }
+  // Preserve the original <head>, scripts and page shell. Only the edited
+  // frontend body is replaced with the cleaned Structure Mirror content.
+  const cleanedBody = buildCleanPageHTML();
+  doc.body.innerHTML = cleanedBody;
 
-  const old =
-    await api(
-      "/api/page/" +
-      encodeURIComponent(
-        current
-      )
-    );
+  await api("/api/page/" + encodeURIComponent(current), {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      html: "<!doctype html>" + doc.documentElement.outerHTML
+    })
+  });
 
-  const doc =
-    new DOMParser()
-      .parseFromString(
-        old.html,
-        "text/html"
-      );
-
-  const cleanedBody =
-    buildCleanPageHTML();
-
-  doc.body.innerHTML =
-    cleanedBody;
-
-  await api(
-    "/api/page/" +
-    encodeURIComponent(
-      current
-    ),
-    {
-      method:
-        "PUT",
-
-      headers: {
-        "Content-Type":
-          "application/json"
-      },
-
-      body:
-        JSON.stringify({
-          html:
-            "<!doctype html>" +
-            doc.documentElement
-              .outerHTML
-        })
-    }
-  );
-
-  originalBodyHTML =
-    cleanedBody;
-
+  originalBodyHTML = cleanedBody;
   updateCompareViews();
-
-  showNotice(
-    "Draft saved successfully. Your changes are ready to publish.",
-    "success"
-  );
-
+  showNotice("Draft saved successfully. Your changes are ready to publish.", "success");
   return true;
 }
 
 async function publish() {
+  if (!current) return;
 
-  if (!current)
-    return;
-
-  const publishButton =
-    document.querySelector(
-      ".editor-header-actions .btn.primary"
-    );
-
-  const originalText =
-    publishButton
-      ? publishButton.textContent
-      : "Publish";
+  const publishButton = document.querySelector(".editor-header-actions .btn.primary");
+  const originalText = publishButton ? publishButton.textContent : "Publish";
 
   try {
-
     if (publishButton) {
-
-      publishButton.disabled =
-        true;
-
-      publishButton.textContent =
-        "Publishing...";
+      publishButton.disabled = true;
+      publishButton.textContent = "Publishing...";
     }
 
+    // Publishing must stop immediately if saving the current editor fails.
     await save();
 
-    const result =
-      await api(
-        "/api/page/" +
-        encodeURIComponent(
-          current
-        ) +
-        "/publish",
-        {
-          method:
-            "POST"
-        }
-      );
+    const result = await api(
+      "/api/page/" + encodeURIComponent(current) + "/publish",
+      { method: "POST" }
+    );
 
     await load();
-
-    showNotice(
-      result.message ||
-      "Published successfully and sent to the live website.",
-      "success"
-    );
-
+    showNotice(result.message || "Published successfully and sent to the live website.", "success");
   } catch (error) {
-
-    showNotice(
-      error.message ||
-      "Unable to publish this page."
-    );
-
+    showNotice(error.message || "Unable to publish this page.");
   } finally {
-
     if (publishButton) {
-
-      publishButton.disabled =
-        false;
-
-      publishButton.textContent =
-        originalText;
+      publishButton.disabled = false;
+      publishButton.textContent = originalText;
     }
   }
 }
@@ -4843,1336 +2544,242 @@ async function publish() {
 /* ==============================
    EDITING TOOLS
 ================================ */
+function cmd(command) {
+  const selection = window.getSelection();
 
-function cmd(
-  command
-) {
-
-  const selection =
-    window.getSelection();
-
-  if (
-    !selection ||
-    !selection.rangeCount
-  ) {
-
-    showNotice(
-      "Click inside editable content first."
-    );
-
+  if (!selection || !selection.rangeCount) {
+    showNotice("Click inside editable content first.");
     return;
   }
 
-  if (
-    command ===
-    "createLink"
-  ) {
-
-    const url =
-      prompt(
-        "Enter the URL"
-      );
+  if (command === "createLink") {
+    const url = prompt("Enter the URL");
 
     if (url) {
-
-      document.execCommand(
-        "createLink",
-        false,
-        url
-      );
+      document.execCommand("createLink", false, url);
     }
 
     return;
   }
 
-  document.execCommand(
-    command,
-    false,
-    null
-  );
-}
-
-/* ==============================
-   MEDIA / OFFICIAL DOCUMENTS
-================================ */
-
-let mediaInsertType =
-  "";
-
-let savedMediaSelection =
-  null;
-
-function openMediaModal(
-  type
-) {
-
-  if (!current) {
-
-    showNotice(
-      "Open a page before inserting media."
-    );
-
-    return;
-  }
-
-  mediaInsertType =
-    type;
-
-  /*
-    Save the exact cursor position before
-    opening the modal.
-  */
-  saveMediaSelection();
-
-  $("mediaFile")
-    .value = "";
-
-  $("mediaAltText")
-    .value = "";
-
-  $("mediaAnchorText")
-    .value = "";
-
-  $("mediaPdfTitle")
-    .value = "";
-
-  if (
-    type ===
-    "image"
-  ) {
-
-    $("mediaModalTitle")
-      .textContent =
-      "Insert Image";
-
-    $("mediaModalSubtitle")
-      .textContent =
-      "Upload an image and insert it at the current cursor position.";
-
-    $("mediaFile")
-      .setAttribute(
-        "accept",
-        "image/jpeg,image/png,image/webp,image/gif"
-      );
-
-    $("mediaFileHelp")
-      .textContent =
-      "Select an image. JPG, PNG, WEBP or GIF. Maximum 10 MB.";
-
-    $("imageAltField")
-      .style.display =
-      "grid";
-
-    $("pdfFields")
-      .style.display =
-      "none";
-
-  } else {
-
-    $("mediaModalTitle")
-      .textContent =
-      "Insert Official PDF";
-
-    $("mediaModalSubtitle")
-      .textContent =
-      "Upload an official PDF and create a clickable frontend link.";
-
-    $("mediaFile")
-      .setAttribute(
-        "accept",
-        "application/pdf"
-      );
-
-    $("mediaFileHelp")
-      .textContent =
-      "Select a PDF. Maximum 25 MB.";
-
-    $("imageAltField")
-      .style.display =
-      "none";
-
-    $("pdfFields")
-      .style.display =
-      "block";
-  }
-
-  $("mediaModal")
-    .style.display =
-    "grid";
-}
-
-function closeMediaModal() {
-
-  $("mediaModal")
-    .style.display =
-    "none";
-
-  mediaInsertType =
-    "";
-
-  savedMediaSelection =
-    null;
-}
-
-function saveMediaSelection() {
-
-  const selection =
-    window.getSelection();
-
-  const editor =
-    $("visualEditor");
-
-  if (
-    !selection ||
-    !selection.rangeCount ||
-    !editor
-  ) {
-
-    savedMediaSelection =
-      null;
-
-    return;
-  }
-
-  const range =
-    selection.getRangeAt(
-      0
-    );
-
-  if (
-    !editor.contains(
-      range.commonAncestorContainer
-    )
-  ) {
-
-    savedMediaSelection =
-      null;
-
-    return;
-  }
-
-  savedMediaSelection =
-    range.cloneRange();
-}
-
-function restoreMediaSelection() {
-
-  const editor =
-    $("visualEditor");
-
-  if (!editor)
-    return;
-
-  editor.focus();
-
-  const selection =
-    window.getSelection();
-
-  selection.removeAllRanges();
-
-  if (
-    savedMediaSelection
-  ) {
-
-    try {
-
-      selection.addRange(
-        savedMediaSelection
-      );
-
-      return;
-
-    } catch (error) {
-
-      /*
-        If the original cursor is no longer
-        valid, we safely fall back to the
-        end of the editor.
-      */
-    }
-  }
-
-  const range =
-    document.createRange();
-
-  range.selectNodeContents(
-    editor
-  );
-
-  range.collapse(
-    false
-  );
-
-  selection.addRange(
-    range
-  );
-}
-
-function readFileAsDataUrl(
-  file
-) {
-
-  return new Promise(
-    (resolve, reject) => {
-
-      const reader =
-        new FileReader();
-
-      reader.onload =
-        () =>
-          resolve(
-            reader.result
-          );
-
-      reader.onerror =
-        () =>
-          reject(
-            new Error(
-              "Unable to read the selected file."
-            )
-          );
-
-      reader.readAsDataURL(
-        file
-      );
-    }
-  );
-}
-
-async function uploadAndInsertMedia() {
-
-  if (
-    !current ||
-    !currentCollegeId ||
-    !currentPageId
-  ) {
-
-    showNotice(
-      "Open a page before inserting media."
-    );
-
-    return;
-  }
-
-  const file =
-    $("mediaFile")
-      .files[0];
-
-  if (!file) {
-
-    showNotice(
-      "Please select a file."
-    );
-
-    return;
-  }
-
-  /* IMAGE VALIDATION */
-
-  if (
-    mediaInsertType ===
-    "image"
-  ) {
-
-    if (
-      !file.type.startsWith(
-        "image/"
-      )
-    ) {
-
-      showNotice(
-        "Please select a valid image."
-      );
-
-      return;
-    }
-
-    if (
-      file.size >
-      10 *
-      1024 *
-      1024
-    ) {
-
-      showNotice(
-        "Image is larger than 10 MB."
-      );
-
-      return;
-    }
-
-    const imageName =
-      file.name
-        .toLowerCase();
-
-    if (
-      !(
-        imageName.endsWith(
-          ".jpg"
-        ) ||
-        imageName.endsWith(
-          ".jpeg"
-        ) ||
-        imageName.endsWith(
-          ".png"
-        ) ||
-        imageName.endsWith(
-          ".webp"
-        ) ||
-        imageName.endsWith(
-          ".gif"
-        )
-      )
-    ) {
-
-      showNotice(
-        "Use JPG, JPEG, PNG, WEBP or GIF."
-      );
-
-      return;
-    }
-
-    if (
-      !$("mediaAltText")
-        .value
-        .trim()
-    ) {
-
-      showNotice(
-        "Please enter image alt text."
-      );
-
-      return;
-    }
-  }
-
-  /* PDF VALIDATION */
-
-  if (
-    mediaInsertType ===
-    "pdf"
-  ) {
-
-    if (
-      file.type !==
-        "application/pdf" &&
-      !file.name
-        .toLowerCase()
-        .endsWith(
-          ".pdf"
-        )
-    ) {
-
-      showNotice(
-        "Please select a PDF file."
-      );
-
-      return;
-    }
-
-    if (
-      file.size >
-      25 *
-      1024 *
-      1024
-    ) {
-
-      showNotice(
-        "PDF is larger than 25 MB."
-      );
-
-      return;
-    }
-
-    if (
-      !$("mediaAnchorText")
-        .value
-        .trim()
-    ) {
-
-      showNotice(
-        "Please enter the PDF anchor text."
-      );
-
-      return;
-    }
-  }
-
-  const button =
-    $("insertMediaBtn");
-
-  const originalText =
-    button.textContent;
-
-  try {
-
-    button.disabled =
-      true;
-
-    button.textContent =
-      "Uploading...";
-
-    const dataUrl =
-      await readFileAsDataUrl(
-        file
-      );
-
-    /*
-      The server receives:
-      - selected college
-      - selected page
-      - media type
-      - original file name
-      - file data
-    */
-
-    const result =
-      await api(
-        "/api/media/upload",
-        {
-          method:
-            "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
-
-          body:
-            JSON.stringify({
-
-              collegeId:
-                currentCollegeId,
-
-              pageId:
-                currentPageId,
-
-              kind:
-                mediaInsertType,
-
-              originalName:
-                file.name,
-
-              dataUrl:
-                dataUrl
-
-            })
-        }
-      );
-
-    /*
-      Restore the cursor that existed
-      before the modal opened.
-    */
-
-    restoreMediaSelection();
-
-    if (
-      mediaInsertType ===
-      "image"
-    ) {
-
-      insertImageAtSelection(
-        result.url,
-        $("mediaAltText")
-          .value
-          .trim()
-      );
-
-    } else {
-
-      insertPdfAtSelection(
-        result.url,
-
-        $("mediaAnchorText")
-          .value
-          .trim(),
-
-        $("mediaPdfTitle")
-          .value
-          .trim()
-      );
-    }
-
-    closeMediaModal();
-
-    showNotice(
-      "Media inserted. Click Save Draft, then Publish to send it to the live frontend.",
-      "success"
-    );
-
-  } catch (error) {
-
-    showNotice(
-      error.message ||
-      "Unable to upload media."
-    );
-
-  } finally {
-
-    button.disabled =
-      false;
-
-    button.textContent =
-      originalText;
-  }
-}
-
-function insertImageAtSelection(
-  url,
-  altText
-) {
-
-  const image =
-    document.createElement(
-      "img"
-    );
-
-  image.src =
-    url;
-
-  image.alt =
-    altText;
-
-  image.style.maxWidth =
-    "100%";
-
-  image.style.height =
-    "auto";
-
-  image.setAttribute(
-    "data-cms-media",
-    "image"
-  );
-
-  const editor =
-    $("visualEditor");
-
-  const selection =
-    window.getSelection();
-
-  if (
-    selection &&
-    selection.rangeCount &&
-    editor.contains(
-      selection.anchorNode
-    )
-  ) {
-
-    const range =
-      selection.getRangeAt(
-        0
-      );
-
-    range.deleteContents();
-
-    range.insertNode(
-      image
-    );
-
-    range.setStartAfter(
-      image
-    );
-
-    range.collapse(
-      true
-    );
-
-    selection.removeAllRanges();
-
-    selection.addRange(
-      range
-    );
-
-  } else {
-
-    editor.appendChild(
-      image
-    );
-  }
-}
-
-function insertPdfAtSelection(
-  url,
-  anchorText,
-  documentTitle
-) {
-
-  /*
-    Use a paragraph so that the PDF
-    link has its own block on the frontend.
-  */
-
-  const wrapper =
-    document.createElement(
-      "p"
-    );
-
-  wrapper.setAttribute(
-    "data-cms-media",
-    "pdf"
-  );
-
-  wrapper.style.margin =
-    "16px 0";
-
-  const link =
-    document.createElement(
-      "a"
-    );
-
-  link.href =
-    url;
-
-  link.target =
-    "_blank";
-
-  link.rel =
-    "noopener noreferrer";
-
-  link.textContent =
-    anchorText;
-
-  link.setAttribute(
-    "data-cms-pdf",
-    "true"
-  );
-
-  if (
-    documentTitle
-  ) {
-
-    link.title =
-      documentTitle;
-  }
-
-  wrapper.appendChild(
-    link
-  );
-
-  const editor =
-    $("visualEditor");
-
-  const selection =
-    window.getSelection();
-
-  if (
-    selection &&
-    selection.rangeCount &&
-    editor.contains(
-      selection.anchorNode
-    )
-  ) {
-
-    const range =
-      selection.getRangeAt(
-        0
-      );
-
-    range.deleteContents();
-
-    range.insertNode(
-      wrapper
-    );
-
-    range.setStartAfter(
-      wrapper
-    );
-
-    range.collapse(
-      true
-    );
-
-    selection.removeAllRanges();
-
-    selection.addRange(
-      range
-    );
-
-  } else {
-
-    editor.appendChild(
-      wrapper
-    );
-  }
+  document.execCommand(command, false, null);
 }
 
 /* ==============================
    CMS CRUD / SYNC
 ================================ */
-
-function openModal(
-  type
-) {
-
-  if (
-    type === "page" &&
-    !(data?.colleges || [])
-      .length
-  ) {
-
-    showNotice(
-      "Add or sync a college before creating a page."
-    );
-
+function openModal(type) {
+  if (type === "page" && !(data?.colleges || []).length) {
+    showNotice("Add or sync a college before creating a page.");
     return;
   }
 
-  $(type + "Modal")
-    .style.display =
-    "grid";
+  $(type + "Modal").style.display = "grid";
 }
 
 function closeModal() {
-
-  document
-    .querySelectorAll(
-      ".modal"
-    )
-    .forEach(
-      (modal) => {
-
-        modal.style.display =
-          "none";
-      }
-    );
+  document.querySelectorAll(".modal").forEach((modal) => {
+    modal.style.display = "none";
+  });
 }
 
 async function addCollege() {
-
-  const name =
-    $("collegeName")
-      .value
-      .trim();
-
-  const slug =
-    $("collegeSlug")
-      .value
-      .trim();
+  const name = $("collegeName").value.trim();
+  const slug = $("collegeSlug").value.trim();
 
   if (!name) {
-
-    showNotice(
-      "Please enter a college name."
-    );
-
+    showNotice("Please enter a college name.");
     return;
   }
 
   try {
+    await api("/api/colleges", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, slug })
+    });
 
-    await api(
-      "/api/colleges",
-      {
-        method:
-          "POST",
-
-        headers: {
-          "Content-Type":
-            "application/json"
-        },
-
-        body:
-          JSON.stringify({
-            name,
-            slug
-          })
-      }
-    );
-
-    $("collegeName")
-      .value = "";
-
-    $("collegeSlug")
-      .value = "";
-
+    $("collegeName").value = "";
+    $("collegeSlug").value = "";
     closeModal();
-
     await load();
-
-    showNotice(
-      "College created successfully.",
-      "success"
-    );
-
+    showNotice("College created successfully.", "success");
   } catch (error) {
-
-    showNotice(
-      error.message ||
-      "Unable to create college."
-    );
+    showNotice(error.message || "Unable to create college.");
   }
 }
 
 async function addPage() {
-
-  const collegeId =
-    $("pageCollege")
-      .value;
-
-  const type =
-    $("pageType")
-      .value;
-
-  const category =
-    $("pageCategory")
-      .value;
-
-  const name =
-    $("pageName")
-      .value
-      .trim();
+  const collegeId = $("pageCollege").value;
+  const type = $("pageType").value;
+  const category = $("pageCategory").value;
+  const name = $("pageName").value.trim();
 
   if (!collegeId) {
-
-    showNotice(
-      "Please select a college."
-    );
-
+    showNotice("Please select a college.");
     return;
   }
 
   try {
+    await api("/api/pages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ collegeId, type, category, name })
+    });
 
-    await api(
-      "/api/pages",
-      {
-        method:
-          "POST",
-
-        headers: {
-          "Content-Type":
-            "application/json"
-        },
-
-        body:
-          JSON.stringify({
-            collegeId,
-            type,
-            category,
-            name
-          })
-      }
-    );
-
-    $("pageName")
-      .value = "";
-
+    $("pageName").value = "";
     closeModal();
-
     await load();
 
-    currentCollegeId =
-      collegeId;
-
-    $("collegeSelect")
-      .value =
-      collegeId;
-
+    currentCollegeId = collegeId;
+    $("collegeSelect").value = collegeId;
     onCollegeChange();
 
-    showNotice(
-      "Page created successfully.",
-      "success"
-    );
-
+    showNotice("Page created successfully.", "success");
   } catch (error) {
-
-    showNotice(
-      error.message ||
-      "Unable to create page."
-    );
+    showNotice(error.message || "Unable to create page.");
   }
 }
 
 async function syncPages() {
+  const button = $("syncBtn");
+  const originalText = button.textContent;
 
-  const button =
-    $("syncBtn");
-
-  const originalText =
-    button.textContent;
-
-  button.disabled =
-    true;
-
-  button.textContent =
-    "Syncing...";
+  button.disabled = true;
+  button.textContent = "Syncing...";
 
   try {
-
-    const result =
-      await api(
-        "/api/sync/discover",
-        {
-          method:
-            "POST"
-        }
-      );
-
+    const result = await api("/api/sync/discover", { method: "POST" });
     await load();
 
-    const addedPages =
-      (
-        result.added ||
-        []
-      )
-      .filter(
-        (item) =>
-          item.type ===
-          "page"
-      )
-      .length;
+    const addedPages = (result.added || []).filter((item) => item.type === "page").length;
 
     showNotice(
       `Sync complete: ${result.scanned} HTML files scanned and ${addedPages} new CMS pages added.`,
       "success"
     );
-
   } catch (error) {
-
-    showNotice(
-      error.message ||
-      "Sync failed."
-    );
-
+    showNotice(error.message || "Sync failed.");
   } finally {
-
-    button.disabled =
-      false;
-
-    button.textContent =
-      originalText;
+    button.disabled = false;
+    button.textContent = originalText;
   }
 }
 
 /* ==============================
    NAVIGATION
 ================================ */
-
-function showEditor(
-  show
-) {
-
-  $("mainTop")
-    .style.display =
-    show
-      ? "none"
-      : "flex";
-
-  $("editorView")
-    .style.display =
-    show
-      ? "block"
-      : "none";
+function showEditor(show) {
+  $("mainTop").style.display = show ? "none" : "flex";
+  $("editorView").style.display = show ? "block" : "none";
+  document.body.classList.toggle("editor-open", show);
 
   if (!show) {
+    ["dashboardView", "pagesView", "templatesView", "seoView", "historyView"].forEach((id) => {
+      $(id).style.display = "none";
+    });
 
-    [
-      "dashboardView",
-      "pagesView",
-      "templatesView",
-      "seoView",
-      "historyView"
-    ].forEach(
-      (id) => {
-
-        $(id)
-          .style.display =
-          "none";
-      }
-    );
-
-    $(currentView + "View")
-      .style.display =
-      "block";
+    $(currentView + "View").style.display = "block";
   }
 }
 
 function backToPages() {
+  current = null;
+  setEditorMode("edit");
+  showView("dashboard");
 
-  current =
-    null;
-
-  setEditorMode(
-    "edit"
-  );
-
-  showView(
-    "dashboard"
-  );
-
-  $("collegeSelect")
-    .value =
-    currentCollegeId;
-
+  $("collegeSelect").value = currentCollegeId;
   onCollegeChange();
 
-  $("pageSelect")
-    .value =
-    currentPageId;
-
+  $("pageSelect").value = currentPageId;
   onPageChange();
 }
 
-async function showView(
-  view
-) {
-
-  currentView =
-    view;
-
-  current =
-    null;
+async function showView(view) {
+  currentView = view;
+  current = null;
+  document.body.classList.remove("editor-open");
 
   const meta = {
-
-    dashboard: [
-      "Editorial Dashboard",
-      "One workspace for existing and future college pages."
-    ],
-
-    pages: [
-      "All Content Pages",
-      "Browse college, course, exam and placement pages and open any page in the Structure Mirror editor."
-    ],
-
-    templates: [
-      "Templates",
-      "Available page templates used when creating new CMS pages."
-    ],
-
-    seo: [
-      "SEO Centre",
-      "Manage Header Title, SEO Title, Description and Keywords for each individual page."
-    ],
-
-    history: [
-      "Publish History",
-      "Recently published CMS pages."
-    ]
-
+    dashboard: ["Editorial Dashboard", "One workspace for existing and future college pages."],
+    pages: ["All Content Pages", "Browse college, course, exam and placement pages and open any page in the Structure Mirror editor."],
+    templates: ["Templates", "Available page templates used when creating new CMS pages."],
+    seo: ["SEO Centre", "Manage Header Title, SEO Title, Description and Keywords for each individual page."],
+    history: ["Publish History", "Recently published CMS pages."]
   };
 
-  $("viewTitle")
-    .textContent =
-    meta[view][0];
+  $("viewTitle").textContent = meta[view][0];
+  $("viewSubtitle").textContent = meta[view][1];
 
-  $("viewSubtitle")
-    .textContent =
-    meta[view][1];
+  document.querySelectorAll(".nav").forEach((button) => {
+    button.classList.toggle("active", button.dataset.view === view);
+  });
 
-  document
-    .querySelectorAll(
-      ".nav"
-    )
-    .forEach(
-      (button) => {
+  $("mainTop").style.display = "flex";
+  $("editorView").style.display = "none";
 
-        button.classList.toggle(
-          "active",
-          button.dataset.view ===
-          view
-        );
-      }
-    );
+  ["dashboardView", "pagesView", "templatesView", "seoView", "historyView"].forEach((id) => {
+    $(id).style.display = "none";
+  });
 
-  $("mainTop")
-    .style.display =
-    "flex";
+  $(view + "View").style.display = "block";
 
-  $("editorView")
-    .style.display =
-    "none";
-
-  [
-    "dashboardView",
-    "pagesView",
-    "templatesView",
-    "seoView",
-    "historyView"
-  ].forEach(
-    (id) => {
-
-      $(id)
-        .style.display =
-        "none";
-    }
-  );
-
-  $(view + "View")
-    .style.display =
-    "block";
-
-  if (
-    view ===
-    "history"
-  ) {
-
+  if (view === "history") {
     try {
+      const history = await api("/api/publish-history");
 
-      const history =
-        await api(
-          "/api/publish-history"
-        );
-
-      $("historyList")
-        .innerHTML =
-        history.length
-
-          ? history.map(
-              (item) => `
-
-              <div class="history-row">
-
-                <b>
-                  ${escapeHtml(item.college)}
-                  ·
-                  ${escapeHtml(item.page)}
-                </b>
-
-                <div class="muted">
-
-                  ${
-                    item.publishedAt
-
-                      ? `Published ${new Date(item.publishedAt).toLocaleString()}`
-
-                      : `Status: ${escapeHtml(item.status)}`
-                  }
-
-                </div>
-
+      $("historyList").innerHTML = history.length
+        ? history.map((item) => `
+            <div class="history-row">
+              <b>${escapeHtml(item.college)} · ${escapeHtml(item.page)}</b>
+              <div class="muted">
+                ${item.publishedAt
+                  ? `Published ${new Date(item.publishedAt).toLocaleString()}`
+                  : `Status: ${escapeHtml(item.status)}`}
               </div>
-
-            `
-            ).join("")
-
-          : `<div class="empty">
-              No pages have been published yet.
-            </div>`;
-
+            </div>
+          `).join("")
+        : `<div class="empty">No pages have been published yet.</div>`;
     } catch (error) {
-
-      showNotice(
-        error.message ||
-        "Unable to load publish history."
-      );
+      showNotice(error.message || "Unable to load publish history.");
     }
   }
 }
 
 async function signOut() {
-
-  if (
-    !confirm(
-      "Do you want to sign out?"
-    )
-  ) {
-
-    return;
-  }
+  if (!confirm("Do you want to sign out?")) return;
 
   try {
-
-    await fetch(
-      "/api/logout",
-      {
-        method:
-          "POST",
-
-        credentials:
-          "same-origin"
-      }
-    );
-
+    await fetch("/api/logout", {
+      method: "POST",
+      credentials: "same-origin"
+    });
   } catch (error) {
-
-    /*
-      Even if the network response
-      fails, return to login.
-    */
+    // Even if the network response fails, return to the login screen.
   }
 
-  authenticatedUser =
-    null;
+  authenticatedUser = null;
+  document.body.classList.remove("editor-open");
+  current = null;
+  currentCollegeId = "";
+  currentPageId = "";
+  seoCollegeId = "";
+  seoPageId = "";
+  data = null;
 
-  current =
-    null;
-
-  currentCollegeId =
-    "";
-
-  currentPageId =
-    "";
-
-  seoCollegeId =
-    "";
-
-  seoPageId =
-    "";
-
-  data =
-    null;
-
-  $("loginUsername")
-    .value = "";
-
-  $("loginPassword")
-    .value = "";
-
+  $("loginUsername").value = "";
+  $("loginPassword").value = "";
   showLogin();
 }
 
-/* ==============================
-   MODAL BACKGROUND CLICK
-================================ */
-
-document
-  .querySelectorAll(
-    ".modal"
-  )
-  .forEach(
-    (modal) => {
-
-      modal.addEventListener(
-        "click",
-        (event) => {
-
-          if (
-            event.target ===
-            modal
-          ) {
-
-            /*
-              If this is the media modal,
-              use its dedicated close function.
-            */
-
-            if (
-              modal.id ===
-              "mediaModal"
-            ) {
-
-              closeMediaModal();
-
-            } else {
-
-              closeModal();
-            }
-          }
-        }
-      );
-    }
-  );
-
-/* ==============================
-   START CMS
-================================ */
+/* Modal background click */
+document.querySelectorAll(".modal").forEach((modal) => {
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal) closeModal();
+  });
+});
 
 checkSession();
-
 </script>
-
 </body>
 </html>
