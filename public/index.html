@@ -553,6 +553,13 @@ input,select{
           <button class="tool" onclick="cmd('insertUnorderedList')">• List</button>
           <button class="tool" onclick="cmd('insertOrderedList')">1. List</button>
           <button class="tool" onclick="cmd('createLink')">Link</button>
+          <button class="tool" onclick="openMediaModal('image')">
+  🖼️ Image
+</button>
+
+<button class="tool" onclick="openMediaModal('pdf')">
+  📄 Official PDF
+</button>
           <span class="toolbar-divider"></span>
           <button class="tool" onclick="addTableRow()">+ Table Row</button>
           <button class="tool" onclick="deleteTableRow()">− Table Row</button>
@@ -647,8 +654,650 @@ input,select{
     </div>
   </div>
 </div>
+<!-- =====================================================
+     MEDIA INSERT MODAL
+===================================================== -->
 
+<div
+  class="modal"
+  id="mediaModal"
+  style="display:none"
+>
+  <div
+    class="modal-card"
+    style="max-width:620px"
+  >
+
+    <div
+      style="
+        display:flex;
+        justify-content:space-between;
+        align-items:flex-start;
+        gap:16px;
+        margin-bottom:18px;
+      "
+    >
+
+      <div>
+        <h2 id="mediaModalTitle">
+          Insert Media
+        </h2>
+
+        <div class="muted">
+          Upload this file only to the current page.
+        </div>
+      </div>
+
+      <button
+        class="btn"
+        onclick="closeMediaModal()"
+      >
+        ✕
+      </button>
+
+    </div>
+
+
+    <div class="seo-field">
+
+      <label for="mediaFile">
+        Select File
+      </label>
+
+      <input
+        id="mediaFile"
+        type="file"
+      >
+
+      <div
+        class="seo-helper"
+        id="mediaFileHelp"
+      >
+        Select an image.
+      </div>
+
+    </div>
+
+
+    <div
+      class="seo-field"
+      id="imageAltField"
+    >
+
+      <label for="mediaAltText">
+        Image Alt Text
+      </label>
+
+      <input
+        id="mediaAltText"
+        placeholder="e.g. IIT Delhi DMS campus"
+      >
+
+    </div>
+
+
+    <div
+      class="seo-field"
+      id="pdfAnchorField"
+      style="display:none"
+    >
+
+      <label for="mediaAnchorText">
+        PDF Anchor Text
+      </label>
+
+      <input
+        id="mediaAnchorText"
+        placeholder="e.g. Download IIT Delhi DMS Admission Brochure 2026"
+      >
+
+      <div class="seo-helper">
+        This exact text will appear as the clickable link on the frontend.
+      </div>
+
+    </div>
+
+
+    <div
+      class="seo-field"
+      id="pdfTitleField"
+      style="display:none"
+    >
+
+      <label for="mediaPdfTitle">
+        Document Title
+      </label>
+
+      <input
+        id="mediaPdfTitle"
+        placeholder="e.g. IIT Delhi DMS Admission Brochure 2026"
+      >
+
+    </div>
+
+
+    <div
+      style="
+        margin-top:18px;
+        padding:14px;
+        border:1px solid #dce3ed;
+        border-radius:8px;
+        background:#f8fbff;
+      "
+    >
+
+      <strong>
+        Where will it be inserted?
+      </strong>
+
+      <div
+        class="muted"
+        style="margin-top:5px"
+      >
+        The file will be inserted exactly where your cursor
+        is currently placed in the editor.
+      </div>
+
+    </div>
+
+
+    <div
+      class="dialog-actions"
+      style="margin-top:20px"
+    >
+
+      <button
+        class="btn"
+        onclick="closeMediaModal()"
+      >
+        Cancel
+      </button>
+
+      <button
+        class="btn primary"
+        id="insertMediaBtn"
+        onclick="uploadAndInsertMedia()"
+      >
+        Upload & Insert
+      </button>
+
+    </div>
+
+  </div>
+</div>
 <script>
+  // =========================================================
+// MEDIA / DOCUMENT INSERTION
+// =========================================================
+
+let mediaInsertType = "";
+let savedMediaSelection = null;
+
+function openMediaModal(type) {
+  if (!current) {
+    showNotice(
+      "Open a page before inserting media."
+    );
+    return;
+  }
+
+  mediaInsertType = type;
+
+  // Save the user's current cursor/selection.
+  saveMediaSelection();
+
+  const modal = $("mediaModal");
+
+  $("mediaFile").value = "";
+
+  $("mediaAltText").value = "";
+  $("mediaAnchorText").value = "";
+  $("mediaPdfTitle").value = "";
+
+  if (type === "image") {
+
+    $("mediaModalTitle").textContent =
+      "Insert Image";
+
+    $("mediaFile").setAttribute(
+      "accept",
+      "image/jpeg,image/png,image/webp,image/gif"
+    );
+
+    $("mediaFileHelp").textContent =
+      "JPG, PNG, WEBP or GIF. Maximum 10 MB.";
+
+    $("imageAltField").style.display =
+      "block";
+
+    $("pdfAnchorField").style.display =
+      "none";
+
+    $("pdfTitleField").style.display =
+      "none";
+
+  } else {
+
+    $("mediaModalTitle").textContent =
+      "Insert Official PDF";
+
+    $("mediaFile").setAttribute(
+      "accept",
+      "application/pdf"
+    );
+
+    $("mediaFileHelp").textContent =
+      "PDF only. Maximum 25 MB.";
+
+    $("imageAltField").style.display =
+      "none";
+
+    $("pdfAnchorField").style.display =
+      "block";
+
+    $("pdfTitleField").style.display =
+      "block";
+  }
+
+  modal.style.display = "grid";
+}
+
+
+function closeMediaModal() {
+  $("mediaModal").style.display =
+    "none";
+
+  mediaInsertType = "";
+  savedMediaSelection = null;
+}
+
+
+function saveMediaSelection() {
+  const selection =
+    window.getSelection();
+
+  if (
+    !selection ||
+    !selection.rangeCount
+  ) {
+    savedMediaSelection = null;
+    return;
+  }
+
+  const range =
+    selection.getRangeAt(0);
+
+  const editor =
+    $("visualEditor");
+
+  if (
+    !editor.contains(
+      range.commonAncestorContainer
+    )
+  ) {
+    savedMediaSelection = null;
+    return;
+  }
+
+  savedMediaSelection =
+    range.cloneRange();
+}
+
+
+function restoreMediaSelection() {
+  const editor =
+    $("visualEditor");
+
+  editor.focus();
+
+  if (!savedMediaSelection) {
+    const range =
+      document.createRange();
+
+    range.selectNodeContents(
+      editor
+    );
+
+    range.collapse(false);
+
+    const selection =
+      window.getSelection();
+
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    return;
+  }
+
+  const selection =
+    window.getSelection();
+
+  selection.removeAllRanges();
+
+  selection.addRange(
+    savedMediaSelection
+  );
+}
+
+
+function readFileAsDataUrl(file) {
+  return new Promise(
+    (resolve, reject) => {
+
+      const reader =
+        new FileReader();
+
+      reader.onload = () =>
+        resolve(reader.result);
+
+      reader.onerror = () =>
+        reject(
+          new Error(
+            "Unable to read the selected file."
+          )
+        );
+
+      reader.readAsDataURL(file);
+    }
+  );
+}
+
+
+async function uploadAndInsertMedia() {
+
+  if (!current) {
+    showNotice(
+      "No page is currently open."
+    );
+    return;
+  }
+
+  const file =
+    $("mediaFile").files[0];
+
+  if (!file) {
+    showNotice(
+      "Please select a file."
+    );
+    return;
+  }
+
+  if (
+    mediaInsertType === "image" &&
+    file.size > 10 * 1024 * 1024
+  ) {
+    showNotice(
+      "Image is larger than 10 MB."
+    );
+    return;
+  }
+
+  if (
+    mediaInsertType === "pdf" &&
+    file.size > 25 * 1024 * 1024
+  ) {
+    showNotice(
+      "PDF is larger than 25 MB."
+    );
+    return;
+  }
+
+  if (
+    mediaInsertType === "pdf" &&
+    !file.name.toLowerCase().endsWith(".pdf")
+  ) {
+    showNotice(
+      "Please select a PDF file."
+    );
+    return;
+  }
+
+  if (
+    mediaInsertType === "image" &&
+    !file.type.startsWith("image/")
+  ) {
+    showNotice(
+      "Please select a valid image."
+    );
+    return;
+  }
+
+  if (
+    mediaInsertType === "image" &&
+    !$("mediaAltText").value.trim()
+  ) {
+    showNotice(
+      "Please enter image alt text."
+    );
+    return;
+  }
+
+  if (
+    mediaInsertType === "pdf" &&
+    !$("mediaAnchorText").value.trim()
+  ) {
+    showNotice(
+      "Please enter the PDF anchor text."
+    );
+    return;
+  }
+
+  const button =
+    $("insertMediaBtn");
+
+  const originalText =
+    button.textContent;
+
+  try {
+
+    button.disabled = true;
+    button.textContent =
+      "Uploading...";
+
+    const dataUrl =
+      await readFileAsDataUrl(file);
+
+    const result =
+      await api(
+        "/api/media/upload",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body: JSON.stringify({
+            collegeId:
+              currentCollegeId,
+
+            pageId:
+              currentPageId,
+
+            kind:
+              mediaInsertType,
+
+            originalName:
+              file.name,
+
+            dataUrl
+          })
+        }
+      );
+
+    restoreMediaSelection();
+
+    if (
+      mediaInsertType === "image"
+    ) {
+
+      insertImageAtSelection(
+        result.url,
+        $("mediaAltText").value.trim()
+      );
+
+    } else {
+
+      insertPdfAtSelection(
+        result.url,
+        $("mediaAnchorText").value.trim(),
+        $("mediaPdfTitle").value.trim()
+      );
+    }
+
+    closeMediaModal();
+
+    showNotice(
+      mediaInsertType === "image"
+        ? "Image inserted successfully. Save the draft to keep it."
+        : "Official PDF inserted successfully. Save the draft to keep it.",
+      "success"
+    );
+
+  } catch (error) {
+
+    showNotice(
+      error.message ||
+      "Unable to upload media."
+    );
+
+  } finally {
+
+    button.disabled = false;
+    button.textContent =
+      originalText;
+  }
+}
+
+
+function insertImageAtSelection(
+  url,
+  altText
+) {
+
+  const image =
+    document.createElement("img");
+
+  image.src = url;
+  image.alt = altText;
+
+  image.style.maxWidth =
+    "100%";
+
+  image.style.height =
+    "auto";
+
+  image.setAttribute(
+    "data-cms-media",
+    "image"
+  );
+
+  const selection =
+    window.getSelection();
+
+  if (
+    selection &&
+    selection.rangeCount
+  ) {
+
+    const range =
+      selection.getRangeAt(0);
+
+    range.deleteContents();
+
+    range.insertNode(image);
+
+    range.setStartAfter(
+      image
+    );
+
+    range.collapse(true);
+
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+  } else {
+
+    $("visualEditor")
+      .appendChild(image);
+  }
+}
+
+
+function insertPdfAtSelection(
+  url,
+  anchorText,
+  documentTitle
+) {
+
+  const wrapper =
+    document.createElement("div");
+
+  wrapper.setAttribute(
+    "data-cms-media",
+    "pdf"
+  );
+
+  wrapper.style.margin =
+    "16px 0";
+
+  const link =
+    document.createElement("a");
+
+  link.href = url;
+  link.target = "_blank";
+  link.rel =
+    "noopener noreferrer";
+
+  link.textContent =
+    anchorText;
+
+  link.setAttribute(
+    "data-cms-pdf",
+    "true"
+  );
+
+  if (documentTitle) {
+    link.title =
+      documentTitle;
+  }
+
+  wrapper.appendChild(link);
+
+  const selection =
+    window.getSelection();
+
+  if (
+    selection &&
+    selection.rangeCount
+  ) {
+
+    const range =
+      selection.getRangeAt(0);
+
+    range.deleteContents();
+
+    range.insertNode(wrapper);
+
+    range.setStartAfter(
+      wrapper
+    );
+
+    range.collapse(true);
+
+    selection.removeAllRanges();
+
+    selection.addRange(
+      range
+    );
+
+  } else {
+
+    $("visualEditor")
+      .appendChild(wrapper);
+  }
+}
 let data = null;
 let current = null;
 let currentCollegeId = "";
