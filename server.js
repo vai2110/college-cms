@@ -1,1802 +1,318 @@
-const express = require('express');
-const session = require('express-session');
-const bcrypt = require('bcryptjs');
-const dotenv = require('dotenv');
-const fs = require('fs');
-const path = require('path');
-const https = require('https');
+const PAGE_DEFINITIONS = [
+  { suffix: "executive-mba", name: "Executive MBA", type: "course" },
+  { suffix: "executive-programme", name: "Executive Programme", type: "course" },
+  { suffix: "executive-program", name: "Executive Program", type: "course" },
+  { suffix: "business-analytics", name: "Business Analytics", type: "course" },
+  { suffix: "international-business", name: "International Business", type: "course" },
+  { suffix: "mba-fabm", name: "MBA FABM", type: "course" },
+  { suffix: "mbaex", name: "MBA Executive", type: "course" },
+  { suffix: "mba-ex", name: "MBA Executive", type: "course" },
+  { suffix: "pgdba", name: "PGDBA", type: "course" },
+  { suffix: "pgpx", name: "PGPX", type: "course" },
+  { suffix: "pgp", name: "PGP", type: "course" },
+  { suffix: "pgdm", name: "PGDM", type: "course" },
+  { suffix: "fabm", name: "FABM", type: "course" },
+  { suffix: "mba", name: "MBA", type: "course" }
+];
 
-dotenv.config();
-
-const app = express();
-const PORT = process.env.PORT || 3000;
-const ROOT = __dirname;
-
-const WEBSITE_OWNER = process.env.WEBSITE_OWNER || 'vai2110';
-const WEBSITE_REPO = process.env.WEBSITE_REPO || 'mba-admission-portal';
-const WEBSITE_BRANCH = process.env.WEBSITE_BRANCH || 'main';
-
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN || '';
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || '';
-// =========================================================
-// MEDIA / DOCUMENT SETTINGS
-// =========================================================
-
-const MEDIA_ROOT = path.join(ROOT, 'media');
-
-const IMAGE_EXTENSIONS = new Set([
-  '.jpg',
-  '.jpeg',
-  '.png',
-  '.webp',
-  '.gif'
-]);
-
-const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10 MB
-const MAX_PDF_BYTES = 25 * 1024 * 1024;   // 25 MB
-
-function safeFileName(value = '') {
-  return String(value)
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9._-]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
-
-function getMediaDirectory(collegeId, pageId) {
-  return path.join(
-    MEDIA_ROOT,
-    safeFileName(collegeId),
-    safeFileName(pageId)
-  );
-}
-
-function getMediaPublicPath(collegeId, pageId, fileName) {
-  return `/media/${encodeURIComponent(safeFileName(collegeId))}/${encodeURIComponent(safeFileName(pageId))}/${encodeURIComponent(fileName)}`;
-}
-
-function validateBase64File(dataUrl, expectedType) {
-  const match = String(dataUrl || '').match(
-    /^data:([^;]+);base64,([\s\S]+)$/
-  );
-
-  if (!match) {
-    throw new Error('Invalid file data.');
-  }
-
-  const mimeType = match[1].toLowerCase();
-  const base64 = match[2];
-
-  if (mimeType !== expectedType) {
-    throw new Error(`Invalid file type. Expected ${expectedType}.`);
-  }
-
-  const buffer = Buffer.from(base64, 'base64');
-
-  return {
-    mimeType,
-    buffer
-  };
-}
-
-function validateImageFile(dataUrl) {
-  const match = String(dataUrl || '').match(
-    /^data:([^;]+);base64,([\s\S]+)$/
-  );
-
-  if (!match) {
-    throw new Error('Invalid image data.');
-  }
-
-  const mimeType = match[1].toLowerCase();
-
-  const allowedTypes = new Set([
-    'image/jpeg',
-    'image/png',
-    'image/webp',
-    'image/gif'
-  ]);
-
-  if (!allowedTypes.has(mimeType)) {
-    throw new Error(
-      'Unsupported image type. Use JPG, PNG, WEBP or GIF.'
-    );
-  }
-
-  const buffer = Buffer.from(match[2], 'base64');
-
-  if (buffer.length > MAX_IMAGE_BYTES) {
-    throw new Error('Image is too large. Maximum size is 10 MB.');
-  }
-
-  return {
-    mimeType,
-    buffer
-  };
-}
-
-function validatePdfFile(dataUrl) {
-  const file = validateBase64File(
-    dataUrl,
-    'application/pdf'
-  );
-
-  if (file.buffer.length > MAX_PDF_BYTES) {
-    throw new Error('PDF is too large. Maximum size is 25 MB.');
-  }
-
-  return file;
-}
-
-function extensionForMime(mimeType) {
-  const map = {
-    'image/jpeg': '.jpg',
-    'image/png': '.png',
-    'image/webp': '.webp',
-    'image/gif': '.gif',
-    'application/pdf': '.pdf'
-  };
-
-  return map[mimeType] || '';
-}
-const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || '';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
-const SESSION_SECRET =
-  process.env.SESSION_SECRET || 'change-this-before-production';
-
-app.set('trust proxy', 1);
-
-app.use(express.json({ limit: '25mb' }));
-
-app.use(
-  session({
-    name: 'collegecms.sid',
-    secret: SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 1000 * 60 * 60 * 12
-    }
-  })
-);
-
-const regFile = path.join(ROOT, 'data', 'registry.json');
-
-const load = () =>
-  JSON.parse(fs.readFileSync(regFile, 'utf8'));
-
-const save = data =>
-  fs.writeFileSync(
-    regFile,
-    JSON.stringify(data, null, 2)
-  );
-
-const slug = value =>
-  String(value || '')
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-
-const now = () => new Date().toISOString();
-
-function findPage(id) {
-  for (const college of load().colleges) {
-    const page = college.pages.find(
-      item => `${college.id}:${item.id}` === id
-    );
-
-    if (page) {
-      return { college, page };
-    }
-  }
-
-  return null;
-}
-
-function requireAuth(req, res, next) {
-  if (req.session && req.session.user) {
-    return next();
-  }
-
-  return res.status(401).json({
-    error: 'Please sign in to access CollegeCMS.'
-  });
-}
-
-/* =========================================================
-   GITHUB API HELPERS
-========================================================= */
-
-function githubRequest(method, apiPath, body) {
-  return new Promise((resolve, reject) => {
-    const payload = body
-      ? JSON.stringify(body)
-      : null;
-
-    const request = https.request(
-      {
-        hostname: 'api.github.com',
-        path: apiPath,
-        method,
-        headers: {
-          'User-Agent': 'CollegeCMS',
-          Accept: 'application/vnd.github+json',
-          'X-GitHub-Api-Version': '2022-11-28',
-
-          ...(GITHUB_TOKEN
-            ? {
-                Authorization: `Bearer ${GITHUB_TOKEN}`
-              }
-            : {}),
-
-          ...(payload
-            ? {
-                'Content-Type': 'application/json',
-                'Content-Length':
-                  Buffer.byteLength(payload)
-              }
-            : {})
-        }
-      },
-      response => {
-        let raw = '';
-
-        response.on('data', chunk => {
-          raw += chunk;
-        });
-
-        response.on('end', () => {
-          let parsed = {};
-
-          try {
-            parsed = raw
-              ? JSON.parse(raw)
-              : {};
-          } catch {
-            parsed = { raw };
-          }
-
-          if (
-            response.statusCode >= 200 &&
-            response.statusCode < 300
-          ) {
-            return resolve(parsed);
-          }
-
-          reject(
-            new Error(
-              parsed.message ||
-                `GitHub API error (${response.statusCode})`
-            )
-          );
-        });
-      }
-    );
-
-    request.on('error', reject);
-
-    if (payload) {
-      request.write(payload);
-    }
-
-    request.end();
-  });
-}
-
-function githubContentPath(targetPath) {
-  return String(targetPath)
-    .split('/')
+// Convert slug into a readable title
+function titleFromSlug(value) {
+  return String(value || "")
+    .split("-")
     .filter(Boolean)
-    .map(encodeURIComponent)
-    .join('/');
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 }
 
-async function getWebsiteFile(targetPath) {
-  const apiPath =
-    `/repos/${WEBSITE_OWNER}/${WEBSITE_REPO}` +
-    `/contents/${githubContentPath(targetPath)}` +
-    `?ref=${encodeURIComponent(WEBSITE_BRANCH)}`;
+// Get page definition from suffix
+function getPageDefinition(pageSuffix) {
+  const suffix = String(pageSuffix || "")
+    .toLowerCase()
+    .replace(/^[-_]+/, "");
 
-  const data = await githubRequest(
-    'GET',
-    apiPath
+  // Special pages
+  if (suffix === "placements") {
+    return {
+      id: "placements",
+      name: "Placements",
+      type: "placements"
+    };
+  }
+
+  if (suffix === "admission" || suffix === "admissions") {
+    return {
+      id: "admission",
+      name: "Admission",
+      type: "admission"
+    };
+  }
+
+  if (suffix === "fees" || suffix === "fee") {
+    return {
+      id: "fees",
+      name: "Fees",
+      type: "fees"
+    };
+  }
+
+  // Course-specific pages
+  const definition = PAGE_DEFINITIONS.find(
+    item => item.suffix === suffix
   );
 
-  if (!data.content) {
-    throw new Error(
-      'Website file could not be read from GitHub.'
-    );
+  if (definition) {
+    return {
+      id: definition.suffix,
+      name: definition.name,
+      type: definition.type
+    };
+  }
+
+  // Generic page
+  if (suffix) {
+    return {
+      id: suffix,
+      name: titleFromSlug(suffix),
+      type: "course"
+    };
   }
 
   return {
-    html: Buffer.from(
-      data.content.replace(/\n/g, ''),
-      'base64'
-    ).toString('utf8'),
-
-    sha: data.sha
+    id: "overview",
+    name: "Overview",
+    type: "overview"
   };
 }
 
-async function putWebsiteFile(
-  targetPath,
-  html,
-  message
-) {
-  if (!GITHUB_TOKEN) {
-    throw new Error(
-      'GitHub publishing is not configured. Add GITHUB_TOKEN to your deployment environment variables.'
-    );
-  }
-
-  let sha = null;
-
-  try {
-    sha = (
-      await getWebsiteFile(targetPath)
-    ).sha;
-  } catch (error) {
-    if (!/Not Found|404/i.test(error.message)) {
-      throw error;
-    }
-  }
-
-  return githubRequest(
-    'PUT',
-    `/repos/${WEBSITE_OWNER}/${WEBSITE_REPO}` +
-      `/contents/${githubContentPath(targetPath)}`,
-    {
-      message,
-
-      content: Buffer.from(
-        html,
-        'utf8'
-      ).toString('base64'),
-
-      branch: WEBSITE_BRANCH,
-
-      ...(sha ? { sha } : {})
-    }
-  );
+// Normalise college slug
+function normaliseCollegeSlug(value) {
+  return String(value || "")
+    .toLowerCase()
+    .trim()
+    .replace(/\.html$/i, "")
+    .replace(/[_\s]+/g, "-")
+    .replace(/-+/g, "-");
 }
 
-/* =========================================================
-   PAGE PATH HELPERS
-========================================================= */
+// Find the parent college for a page slug
+function findParentCollegeId(base, colleges = []) {
+  const normalisedBase = normaliseCollegeSlug(base);
 
-function defaultTargetPath(
-  collegeId,
-  pageId,
-  type
-) {
-  if (type === 'overview') {
-    return `${collegeId}.html`;
-  }
-
-  if (type === 'placement') {
-    return `${collegeId}-placements.html`;
-  }
-
-  if (type === 'admission') {
-    return `${collegeId}-admission.html`;
-  }
-
-  if (type === 'fees') {
-    return `${collegeId}-fees.html`;
-  }
-
-  return `${collegeId}-${pageId}.html`;
-}
-
-function classifyPath(filePath) {
-  const base = path.basename(
-    filePath,
-    '.html'
-  );
-
-  if (
-    base === 'index' ||
-    [
-      'college',
-      'colleges',
-      'exams',
-      'content-audit'
-    ].includes(base)
-  ) {
+  if (!normalisedBase) {
     return null;
   }
 
-  if (base.endsWith('-placements')) {
-    return {
-      collegeId: base.replace(
-        /-placements$/,
-        ''
-      ),
-      pageId: 'placements',
-      name: 'Placements',
-      type: 'placement'
-    };
-  }
-
-  if (base.endsWith('-admission')) {
-    return {
-      collegeId: base.replace(
-        /-admission$/,
-        ''
-      ),
-      pageId: 'admission',
-      name: 'Admission',
-      type: 'admission'
-    };
-  }
-
-  if (base.endsWith('-fees')) {
-    return {
-      collegeId: base.replace(
-        /-fees$/,
-        ''
-      ),
-      pageId: 'fees',
-      name: 'Courses & Fees',
-      type: 'fees'
-    };
-  }
-
-  if (/^(cat|cmat|gmat|mat|nmat)$/i.test(base)) {
-    return null;
-  }
-
-  return {
-    collegeId: base,
-    pageId: 'overview',
-    name: 'Overview',
-    type: 'overview'
-  };
-}
-
-/* =========================================================
-   SEO HELPERS
-========================================================= */
-
-function escapeHtml(value = '') {
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-
-function decodeHtmlText(value = '') {
-  return String(value)
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>')
-    .replace(/&quot;/gi, '"')
-    .replace(/&#039;|&#39;/gi, "'")
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function getTagContent(html, tagName) {
-  const match = String(html).match(
-    new RegExp(
-      `<${tagName}\\b[^>]*>([\\s\\S]*?)<\\/${tagName}>`,
-      'i'
-    )
-  );
-
-  return match
-    ? decodeHtmlText(match[1])
-    : '';
-}
-
-function getMetaContent(html, name) {
-  const tags =
-    String(html).match(/<meta\b[^>]*>/gi) ||
-    [];
-
-  const target =
-    String(name).toLowerCase();
-
-  for (const tag of tags) {
-    const nameMatch = tag.match(
-      /\bname\s*=\s*(["'])(.*?)\1/i
+  // Exact college match first
+  const exact = colleges.find(college => {
+    const collegeSlug = normaliseCollegeSlug(
+      college.slug || college.id
     );
 
-    if (
-      !nameMatch ||
-      nameMatch[2]
-        .trim()
-        .toLowerCase() !== target
-    ) {
-      continue;
-    }
-
-    const contentMatch = tag.match(
-      /\bcontent\s*=\s*(["'])([\s\S]*?)\1/i
-    );
-
-    return contentMatch
-      ? decodeHtmlText(contentMatch[2])
-      : '';
-  }
-
-  return '';
-}
-
-function extractSeoFromHtml(html) {
-  return {
-    headerTitle: getTagContent(
-      html,
-      'h1'
-    ),
-
-    seoTitle: getTagContent(
-      html,
-      'title'
-    ),
-
-    seoDescription: getMetaContent(
-      html,
-      'description'
-    ),
-
-    seoKeywords: getMetaContent(
-      html,
-      'keywords'
-    )
-  };
-}
-
-function upsertTitle(html, value) {
-  const safe = escapeHtml(value || '');
-
-  if (
-    /<title\b[^>]*>[\s\S]*?<\/title>/i.test(
-      html
-    )
-  ) {
-    return html.replace(
-      /<title\b[^>]*>[\s\S]*?<\/title>/i,
-      `<title>${safe}</title>`
-    );
-  }
-
-  return html.replace(
-    /<\/head>/i,
-    `  <title>${safe}</title>\n</head>`
-  );
-}
-
-function upsertMeta(html, name, value) {
-  const safe = escapeHtml(value || '');
-
-  const metaPattern = new RegExp(
-    `<meta\\b(?=[^>]*\\bname\\s*=\\s*(["'])${name}\\1)[^>]*>`,
-    'i'
-  );
-
-  if (metaPattern.test(html)) {
-    return html.replace(
-      metaPattern,
-      `<meta name="${name}" content="${safe}">`
-    );
-  }
-
-  return html.replace(
-    /<\/head>/i,
-    `  <meta name="${name}" content="${safe}">\n</head>`
-  );
-}
-
-function upsertFirstH1(html, value) {
-  const safe = escapeHtml(value || '');
-
-  const pattern =
-    /<h1\b([^>]*)>[\s\S]*?<\/h1>/i;
-
-  if (pattern.test(html)) {
-    return html.replace(
-      pattern,
-      (match, attributes) =>
-        `<h1${attributes}>${safe}</h1>`
-    );
-  }
-
-  return html.replace(
-    /<body\b([^>]*)>/i,
-    `<body$1>\n<h1>${safe}</h1>`
-  );
-}
-
-function applySeoToHtml(html, seo = {}) {
-  let updated = String(html);
-
-  updated = upsertTitle(
-    updated,
-    seo.seoTitle || ''
-  );
-
-  updated = upsertMeta(
-    updated,
-    'description',
-    seo.seoDescription || ''
-  );
-
-  updated = upsertMeta(
-    updated,
-    'keywords',
-    seo.seoKeywords || ''
-  );
-
-  if (
-    String(
-      seo.headerTitle || ''
-    ).trim()
-  ) {
-    updated = upsertFirstH1(
-      updated,
-      seo.headerTitle.trim()
-    );
-  }
-
-  return updated;
-}
-
-function markPageDraft(found) {
-  const data = load();
-
-  const page = data.colleges
-    .find(
-      college =>
-        college.id === found.college.id
-    )
-    .pages.find(
-      item =>
-        item.id === found.page.id
-    );
-
-  page.status =
-    page.status === 'live'
-      ? 'live-draft'
-      : 'draft';
-
-  page.draftUpdatedAt = now();
-
-  save(data);
-
-  return page;
-}
-
-async function getEditablePageHtml(found) {
-  const draftPath = path.join(
-    ROOT,
-    found.page.source
-  );
-
-  const hasDraft =
-    fs.existsSync(draftPath) &&
-    [
-      'draft',
-      'live-draft'
-    ].includes(found.page.status);
-
-  if (hasDraft) {
-    return fs.readFileSync(
-      draftPath,
-      'utf8'
-    );
-  }
-
-  if (found.page.targetPath) {
-    return (
-      await getWebsiteFile(
-        found.page.targetPath
-      )
-    ).html;
-  }
-
-  if (fs.existsSync(draftPath)) {
-    return fs.readFileSync(
-      draftPath,
-      'utf8'
-    );
-  }
-
-  throw new Error(
-    'No editable source was found for this page.'
-  );
-}
-
-/* =========================================================
-   AUTHENTICATION
-========================================================= */
-
-app.post(
-  '/api/login',
-  async (req, res) => {
-    try {
-      const username = String(
-        req.body.username || ''
-      );
-
-      const password = String(
-        req.body.password || ''
-      );
-
-      if (
-        !ADMIN_USERNAME ||
-        (
-          !ADMIN_PASSWORD_HASH &&
-          !ADMIN_PASSWORD
-        )
-      ) {
-        return res.status(503).json({
-          error:
-            'CMS login has not been configured on the server yet.'
-        });
-      }
-
-      const validUser =
-        username === ADMIN_USERNAME;
-
-      const validPassword =
-        ADMIN_PASSWORD_HASH
-          ? await bcrypt.compare(
-              password,
-              ADMIN_PASSWORD_HASH
-            )
-          : password === ADMIN_PASSWORD;
-
-      if (
-        !validUser ||
-        !validPassword
-      ) {
-        return res.status(401).json({
-          error:
-            'Invalid username or password.'
-        });
-      }
-
-      req.session.user = {
-        username: ADMIN_USERNAME,
-        role: 'admin'
-      };
-
-      res.json({
-        ok: true,
-        user: req.session.user
-      });
-
-    } catch (error) {
-      res.status(500).json({
-        error: error.message
-      });
-    }
-  }
-);
-
-app.post(
-  '/api/logout',
-  requireAuth,
-  (req, res) => {
-    req.session.destroy(() => {
-      res.json({ ok: true });
-    });
-  }
-);
-
-app.get('/api/me', (req, res) => {
-  res.json({
-    authenticated:
-      !!req.session?.user,
-
-    user:
-      req.session?.user || null
-  });
-});
-
-/* =========================================================
-   PROTECTED CMS APIs
-========================================================= */
-
-app.use('/api', requireAuth);
-// =========================================================
-// MEDIA UPLOAD API
-// Files are stored page-wise:
-//
-// media/
-//   college-id/
-//     page-id/
-//       image.webp
-//       official-document.pdf
-//
-// Nothing is automatically inserted into any page.
-// The frontend editor decides where the asset is inserted.
-// =========================================================
-
-app.post('/api/media/upload', (req, res) => {
-  try {
-    const collegeId = safeFileName(req.body.collegeId);
-    const pageId = safeFileName(req.body.pageId);
-    const kind = String(req.body.kind || '').toLowerCase();
-
-    const originalName = String(
-      req.body.originalName || ''
-    ).trim();
-
-    const dataUrl = req.body.dataUrl;
-
-    if (!collegeId || !pageId) {
-      return res.status(400).json({
-        error: 'College and page are required.'
-      });
-    }
-
-    if (!dataUrl) {
-      return res.status(400).json({
-        error: 'File data is required.'
-      });
-    }
-
-    if (!originalName) {
-      return res.status(400).json({
-        error: 'Original file name is required.'
-      });
-    }
-
-    if (!['image', 'pdf'].includes(kind)) {
-      return res.status(400).json({
-        error: 'Media type must be image or pdf.'
-      });
-    }
-
-    const file = kind === 'image'
-      ? validateImageFile(dataUrl)
-      : validatePdfFile(dataUrl);
-
-    const originalExt = path.extname(originalName).toLowerCase();
-
-    if (kind === 'image' && !IMAGE_EXTENSIONS.has(originalExt)) {
-      return res.status(400).json({
-        error: 'Unsupported image extension.'
-      });
-    }
-
-    if (kind === 'pdf' && originalExt !== '.pdf') {
-      return res.status(400).json({
-        error: 'Only PDF files are allowed.'
-      });
-    }
-
-    const baseName = safeFileName(
-      path.basename(
-        originalName,
-        originalExt
-      )
-    ) || `${kind}-${Date.now()}`;
-
-    const extension =
-      extensionForMime(file.mimeType) || originalExt;
-
-    const fileName =
-      `${baseName}-${Date.now()}${extension}`;
-
-    const directory =
-      getMediaDirectory(
-        collegeId,
-        pageId
-      );
-
-    fs.mkdirSync(
-      directory,
-      {
-        recursive: true
-      }
-    );
-
-    const absolutePath =
-      path.join(
-        directory,
-        fileName
-      );
-
-    fs.writeFileSync(
-      absolutePath,
-      file.buffer
-    );
-
-    const publicPath =
-      getMediaPublicPath(
-        collegeId,
-        pageId,
-        fileName
-      );
-
-    res.json({
-      ok: true,
-      kind,
-      fileName,
-      originalName,
-      mimeType: file.mimeType,
-      size: file.buffer.length,
-      url: publicPath
-    });
-
-  } catch (error) {
-    res.status(400).json({
-      error: error.message ||
-        'Unable to upload media.'
-    });
-  }
-});
-app.get('/api/config', (req, res) => {
-  res.json({
-    website:
-      `${WEBSITE_OWNER}/${WEBSITE_REPO}`,
-
-    branch: WEBSITE_BRANCH,
-
-    githubPublishingConfigured:
-      !!GITHUB_TOKEN
-  });
-});
-
-app.get('/api/colleges', (req, res) => {
-  res.json(load());
-});
-
-/* =========================================================
-   COLLEGES
-========================================================= */
-
-app.post('/api/colleges', (req, res) => {
-  const data = load();
-
-  const name =
-    req.body.name?.trim();
-
-  if (!name) {
-    return res.status(400).json({
-      error: 'College name required'
-    });
-  }
-
-  const id = slug(
-    req.body.slug || name
-  );
-
-  if (
-    data.colleges.some(
-      college => college.id === id
-    )
-  ) {
-    return res.status(409).json({
-      error: 'College already exists'
-    });
-  }
-
-  data.colleges.push({
-    id,
-    name,
-    slug: id,
-    pages: []
+    return collegeSlug === normalisedBase;
   });
 
-  fs.mkdirSync(
-    path.join(
-      ROOT,
-      'content',
-      id
-    ),
-    {
-      recursive: true
-    }
-  );
+  if (exact) {
+    return exact.id;
+  }
 
-  save(data);
+  // Find longest matching college prefix
+  const matches = colleges
+    .filter(college => {
+      const collegeSlug = normaliseCollegeSlug(
+        college.slug || college.id
+      );
 
-  res.json({
-    ok: true,
-    id
-  });
-});
+      return (
+        normalisedBase.startsWith(`${collegeSlug}-`)
+      );
+    })
+    .sort((a, b) => {
+      const aSlug = normaliseCollegeSlug(a.slug || a.id);
+      const bSlug = normaliseCollegeSlug(b.slug || b.id);
 
-/* =========================================================
-   CREATE PAGE
-========================================================= */
-
-app.post('/api/pages', (req, res) => {
-  const data = load();
-
-  const college =
-    data.colleges.find(
-      item =>
-        item.id === req.body.collegeId
-    );
-
-  if (!college) {
-    return res.status(404).json({
-      error: 'College not found'
+      return bSlug.length - aSlug.length;
     });
-  }
 
-  const type =
-    req.body.type || 'custom';
+  return matches.length ? matches[0].id : null;
+}
 
-  const pageName =
-    req.body.name || type;
-
-  const id = slug(
-    req.body.slug || pageName
-  );
-
-  if (
-    college.pages.some(
-      page => page.id === id
-    )
-  ) {
-    return res.status(409).json({
-      error: 'Page already exists'
-    });
-  }
-
-  const templatePath = path.join(
-    ROOT,
-    'templates',
-    `${type}.html`
-  );
-
-  if (!fs.existsSync(templatePath)) {
-    return res.status(400).json({
-      error: 'Invalid page template'
-    });
-  }
-
-  const html = fs
-    .readFileSync(
-      templatePath,
-      'utf8'
-    )
-    .replaceAll(
-      '{{COLLEGE_NAME}}',
-      college.name
-    )
-    .replaceAll(
-      '{{PAGE_NAME}}',
-      pageName
-    )
-    .replaceAll(
-      '{{SEO_TITLE}}',
-      `${college.name} ${pageName}`
-    )
-    .replaceAll(
-      '{{META_DESCRIPTION}}',
-      `${college.name} ${pageName} information.`
-    );
-
-  const rel =
-    `content/${college.id}/${id}.html`;
-
-  const abs = path.join(
-    ROOT,
-    rel
-  );
-
-  fs.mkdirSync(
-    path.dirname(abs),
-    {
-      recursive: true
-    }
-  );
-
-  fs.writeFileSync(
-    abs,
-    html,
-    'utf8'
-  );
-
-  const page = {
-    id,
-    name: pageName,
-    type,
-
-    category:
-      req.body.category || 'college',
-
-    source: rel,
-
-    targetPath: defaultTargetPath(
-      college.id,
-      id,
-      type
-    ),
-
-    status: 'draft',
-    createdAt: now()
-  };
-
-  college.pages.push(page);
-
-  save(data);
-
-  res.json({
-    ok: true,
-    page: `${college.id}:${id}`
-  });
-});
-
-/* =========================================================
-   LOAD PAGE
-========================================================= */
-
-app.get(
-  '/api/page/:id',
-  async (req, res) => {
-    try {
-      const found = findPage(
-        decodeURIComponent(
-          req.params.id
-        )
-      );
-
-      if (!found) {
-        return res.status(404).json({
-          error: 'Not found'
-        });
-      }
-
-      const draftPath = path.join(
-        ROOT,
-        found.page.source
-      );
-
-      const hasDraft =
-        fs.existsSync(draftPath) &&
-        [
-          'draft',
-          'live-draft'
-        ].includes(
-          found.page.status
-        );
-
-      let html = null;
-      let source = 'live';
-
-      if (hasDraft) {
-        html = fs.readFileSync(
-          draftPath,
-          'utf8'
-        );
-
-        source = 'draft';
-
-      } else if (
-        found.page.targetPath
-      ) {
-        html = (
-          await getWebsiteFile(
-            found.page.targetPath
-          )
-        ).html;
-
-        source = 'live';
-
-      } else if (
-        fs.existsSync(draftPath)
-      ) {
-        html = fs.readFileSync(
-          draftPath,
-          'utf8'
-        );
-
-        source = 'draft';
-
-      } else {
-        return res.status(404).json({
-          error:
-            'No editable source was found for this page.'
-        });
-      }
-
-      res.json({
-        college: found.college,
-        page: found.page,
-        html,
-        source
-      });
-
-    } catch (error) {
-      res.status(500).json({
-        error: error.message
-      });
-    }
-  }
-);
-
-/* =========================================================
-   SAVE DRAFT
-========================================================= */
-
-app.put(
-  '/api/page/:id',
-  (req, res) => {
-    try {
-      const found = findPage(
-        decodeURIComponent(
-          req.params.id
-        )
-      );
-
-      if (!found) {
-        return res.status(404).json({
-          error: 'Not found'
-        });
-      }
-
-      if (!req.body.html) {
-        return res.status(400).json({
-          error: 'HTML is required'
-        });
-      }
-
-      const abs = path.join(
-        ROOT,
-        found.page.source
-      );
-
-      fs.mkdirSync(
-        path.dirname(abs),
-        {
-          recursive: true
-        }
-      );
-
-      fs.writeFileSync(
-        abs,
-        req.body.html,
-        'utf8'
-      );
-
-      const data = load();
-
-      const page = data.colleges
-        .find(
-          college =>
-            college.id === found.college.id
-        )
-        .pages.find(
-          item =>
-            item.id === found.page.id
-        );
-
-      page.status =
-        page.status === 'live'
-          ? 'live-draft'
-          : 'draft';
-
-      page.draftUpdatedAt = now();
-
-      save(data);
-
-      res.json({
-        ok: true,
-        savedAt: page.draftUpdatedAt
-      });
-
-    } catch (error) {
-      res.status(500).json({
-        error: error.message
-      });
-    }
-  }
-);
-
-/* =========================================================
-   PUBLISH PAGE
-========================================================= */
-// =========================================================
-// PUBLISH PAGE MEDIA TO WEBSITE REPOSITORY
-// =========================================================
-
-async function publishPageMedia(
-  found
+// Classify a website HTML file
+function classifyPath(
+  filePath,
+  colleges = [],
+  htmlBases = []
 ) {
-  const mediaDirectory =
-    getMediaDirectory(
-      found.college.id,
-      found.page.id
+  const filename = String(filePath || "")
+    .split("/")
+    .pop();
+
+  const base = filename
+    .replace(/\.html$/i, "")
+    .toLowerCase();
+
+  /*
+   * First check whether this is an exact college overview page.
+   *
+   * Example:
+   * iim-kashipur.html
+   *
+   * becomes:
+   *
+   * IIM Kashipur
+   *   └── Overview
+   */
+  const exactCollege = colleges.find(college => {
+    const collegeSlug = normaliseCollegeSlug(
+      college.slug || college.id
     );
 
-  if (!fs.existsSync(mediaDirectory)) {
-    return [];
-  }
+    return collegeSlug === base;
+  });
 
-  const files =
-    fs.readdirSync(
-      mediaDirectory
-    );
-
-  const published = [];
-
-  for (const fileName of files) {
-    const absolutePath =
-      path.join(
-        mediaDirectory,
-        fileName
-      );
-
-    if (!fs.statSync(absolutePath).isFile()) {
-      continue;
-    }
-
-    const buffer =
-      fs.readFileSync(
-        absolutePath
-      );
-
-    const targetPath =
-      `media/${safeFileName(found.college.id)}` +
-      `/${safeFileName(found.page.id)}` +
-      `/${fileName}`;
-
-    const result =
-      await putWebsiteBinaryFile(
-        targetPath,
-        buffer,
-        `CMS media: ${found.college.name} – ${found.page.name}`
-      );
-
-    published.push({
-      fileName,
-      targetPath,
-      sha:
-        result.content?.sha ||
-        null
-    });
-  }
-
-  return published;
-}
-app.post(
-  '/api/page/:id/publish',
-  async (req, res) => {
-    try {
-      const found = findPage(
-        decodeURIComponent(
-          req.params.id
-        )
-      );
-const publishedMedia =
-  await publishPageMedia(
-    found
-  );
-      if (!found) {
-        return res.status(404).json({
-          error: 'Not found'
-        });
+  if (exactCollege) {
+    return {
+      collegeId: exactCollege.id,
+      page: {
+        id: "overview",
+        name: "Overview",
+        type: "overview",
+        source: filePath,
+        status: "live"
       }
+    };
+  }
 
-      const abs = path.join(
-        ROOT,
-        found.page.source
+  /*
+   * Check known page suffixes.
+   *
+   * Example:
+   *
+   * iim-kashipur-mba.html
+   *
+   * becomes:
+   *
+   * collegeId = iim-kashipur
+   * pageId    = mba
+   */
+  const sortedDefinitions = [
+    ...PAGE_DEFINITIONS,
+    { suffix: "placements", name: "Placements", type: "placements" },
+    { suffix: "admission", name: "Admission", type: "admission" },
+    { suffix: "admissions", name: "Admissions", type: "admission" },
+    { suffix: "fees", name: "Fees", type: "fees" }
+  ].sort((a, b) => {
+    return b.suffix.length - a.suffix.length;
+  });
+
+  for (const definition of sortedDefinitions) {
+    const suffix = `-${definition.suffix}`;
+
+    if (base.endsWith(suffix)) {
+      const parentBase = base.slice(
+        0,
+        -suffix.length
       );
 
-      if (!fs.existsSync(abs)) {
-        return res.status(400).json({
-          error:
-            'Save a draft before publishing.'
-        });
-      }
-
-      const targetPath =
-        found.page.targetPath ||
-        defaultTargetPath(
-          found.college.id,
-          found.page.id,
-          found.page.type
-        );
-
-      const html = fs.readFileSync(
-        abs,
-        'utf8'
+      const parentCollegeId = findParentCollegeId(
+        parentBase,
+        colleges
       );
 
-      const commit =
-        await putWebsiteFile(
-          targetPath,
-          html,
-          `CMS publish: ${found.college.name} – ${found.page.name}`
-        );
-// =========================================================
-// GITHUB BINARY FILE PUBLISHER
-// =========================================================
-
-async function putWebsiteBinaryFile(
-  targetPath,
-  buffer,
-  message
-) {
-  if (!GITHUB_TOKEN) {
-    throw new Error(
-      'GitHub publishing is not configured.'
-    );
-  }
-
-  let sha = null;
-
-  try {
-    const existing =
-      await getWebsiteFile(targetPath);
-
-    sha = existing.sha;
-
-  } catch (error) {
-    if (!/Not Found|404/i.test(error.message)) {
-      throw error;
-    }
-  }
-
-  return githubRequest(
-    'PUT',
-    `/repos/${WEBSITE_OWNER}/${WEBSITE_REPO}` +
-      `/contents/${githubContentPath(targetPath)}`,
-    {
-      message,
-
-      content:
-        buffer.toString('base64'),
-
-      branch:
-        WEBSITE_BRANCH,
-
-      ...(sha
-        ? { sha }
-        : {})
-    }
-  );
-}
-      const verified =
-        await getWebsiteFile(
-          targetPath
-        );
-
-      if (
-        verified.html !== html
-      ) {
-        throw new Error(
-          `GitHub accepted the request, but the published file could not be verified at ${targetPath}.`
-        );
-      }
-
-      const data = load();
-
-      const page = data.colleges
-        .find(
-          college =>
-            college.id === found.college.id
-        )
-        .pages.find(
-          item =>
-            item.id === found.page.id
-        );
-
-      page.targetPath = targetPath;
-      page.status = 'live';
-      page.publishedAt = now();
-
-      page.lastCommit =
-        commit.commit?.sha ||
-        verified.sha ||
-        null;
-
-      page.draftUpdatedAt =
-        page.publishedAt;
-
-      save(data);
-
-      res.json({
-  ok: true,
-
-  message:
-    `Published successfully to ${targetPath}.`,
-
-  targetPath,
-
-  media:
-    publishedMedia,
-
-  commit:
-    page.lastCommit,
-
-  publishedAt:
-    page.publishedAt
-});
-
-    } catch (error) {
-      res.status(500).json({
-        error: error.message
-      });
-    }
-  }
-);
-
-/* =========================================================
-   PUBLISH HISTORY
-========================================================= */
-
-app.get(
-  '/api/publish-history',
-  async (req, res) => {
-    try {
-      const commits =
-        await githubRequest(
-          'GET',
-
-          `/repos/${WEBSITE_OWNER}/${WEBSITE_REPO}` +
-            `/commits?sha=${encodeURIComponent(
-              WEBSITE_BRANCH
-            )}&per_page=100`
-        );
-
-      const history = (
-        Array.isArray(commits)
-          ? commits
-          : []
-      )
-        .map(commit => {
-          const message = String(
-            commit.commit?.message || ''
-          );
-
-          const firstLine =
-            message.split('\n')[0];
-
-          if (
-            !firstLine.startsWith(
-              'CMS publish:'
-            )
-          ) {
-            return null;
+      if (parentCollegeId) {
+        return {
+          collegeId: parentCollegeId,
+          page: {
+            id: definition.suffix,
+            name: definition.name,
+            type: definition.type,
+            source: filePath,
+            status: "live"
           }
-
-          const label =
-            firstLine.replace(
-              /^CMS publish:\s*/,
-              ''
-            );
-
-          const [
-            college = 'Unknown college',
-            page = 'Unknown page'
-          ] =
-            label.split(' – ');
-
-          return {
-            college,
-            page,
-            status: 'live',
-
-            publishedAt:
-              commit.commit?.committer?.date ||
-              commit.commit?.author?.date ||
-              null,
-
-            commit:
-              commit.sha || null
-          };
-        })
-        .filter(Boolean);
-
-      res.json(history);
-
-    } catch (error) {
-      res.status(500).json({
-        error: error.message
-      });
-    }
-  }
-);
-
-/* =========================================================
-   SYNC / DISCOVER WEBSITE PAGES
-========================================================= */
-
-const syncWebsitePages =
-  async (req, res) => {
-    try {
-      const tree =
-        await githubRequest(
-          'GET',
-
-          `/repos/${WEBSITE_OWNER}/${WEBSITE_REPO}` +
-            `/git/trees/${encodeURIComponent(
-              WEBSITE_BRANCH
-            )}?recursive=1`
-        );
-
-      const htmlFiles =
-        (tree.tree || []).filter(
-          item =>
-            item.type === 'blob' &&
-            item.path.endsWith('.html')
-        );
-
-      const data = load();
-      const added = [];
-
-      for (const item of htmlFiles) {
-        const classified =
-          classifyPath(item.path);
-
-        if (!classified) {
-          continue;
-        }
-
-        let college =
-          data.colleges.find(
-            entry =>
-              entry.id ===
-              classified.collegeId
-          );
-
-        if (!college) {
-          const readable =
-            classified.collegeId
-              .replace(/-/g, ' ')
-              .replace(
-                /\b\w/g,
-                letter =>
-                  letter.toUpperCase()
-              );
-
-          college = {
-            id:
-              classified.collegeId,
-
-            name: readable,
-
-            slug:
-              classified.collegeId,
-
-            pages: []
-          };
-
-          data.colleges.push(
-            college
-          );
-        }
-
-        let page =
-          college.pages.find(
-            entry =>
-              entry.id ===
-                classified.pageId ||
-              entry.targetPath ===
-                item.path
-          );
-
-        if (!page) {
-          const rel =
-            `content/${college.id}/${classified.pageId}.html`;
-
-          page = {
-            id:
-              classified.pageId,
-
-            name:
-              classified.name,
-
-            type:
-              classified.type,
-
-            source: rel,
-
-            targetPath:
-              item.path,
-
-            status: 'live'
-          };
-
-          college.pages.push(
-            page
-          );
-
-          added.push(
-            `${college.id}:${classified.pageId}`
-          );
-
-        } else {
-          page.targetPath =
-            item.path;
-
-          if (
-            !page.status ||
-            page.status === 'discovered'
-          ) {
-            page.status = 'live';
-          }
-        }
+        };
       }
 
-      save(data);
+      /*
+       * If the parent college isn't currently in the registry,
+       * try to find an overview HTML file for it during the same sync.
+       */
+      const matchingOverview = htmlBases.find(
+        htmlBase =>
+          normaliseCollegeSlug(htmlBase) ===
+          normaliseCollegeSlug(parentBase)
+      );
 
-      res.json({
-        ok: true,
-        added,
-        scanned:
-          htmlFiles.length
-      });
+      if (matchingOverview) {
+        return {
+          collegeId: normaliseCollegeSlug(parentBase),
+          page: {
+            id: definition.suffix,
+            name: definition.name,
+            type: definition.type,
+            source: filePath,
+            status: "live"
+          }
+        };
+      }
+    }
+  }
 
-    } catch (error) {
-      res.status(500).json({
-        error: error.message
-      });
+  /*
+   * Generic page suffix handling.
+   *
+   * Example:
+   * iim-kashipur-phd.html
+   *
+   * becomes:
+   *
+   * IIM Kashipur
+   *   └── PhD
+   */
+  const knownCollegeBases = colleges
+    .map(college =>
+      normaliseCollegeSlug(college.slug || college.id)
+    )
+    .filter(Boolean)
+    .sort((a, b) => b.length - a.length);
+
+  for (const collegeBase of knownCollegeBases) {
+    const prefix = `${collegeBase}-`;
+
+    if (base.startsWith(prefix)) {
+      const suffix = base.slice(prefix.length);
+
+      if (suffix) {
+        return {
+          collegeId:
+            colleges.find(college =>
+              normaliseCollegeSlug(
+                college.slug || college.id
+              ) === collegeBase
+            )?.id || collegeBase,
+
+          page: {
+            id: suffix,
+            name: titleFromSlug(suffix),
+            type: "course",
+            source: filePath,
+            status: "live"
+          }
+        };
+      }
+    }
+  }
+
+  /*
+   * Fallback:
+   * Treat the file as a college overview.
+   */
+  return {
+    collegeId: normaliseCollegeSlug(base),
+    page: {
+      id: "overview",
+      name: "Overview",
+      type: "overview",
+      source: filePath,
+      status: "live"
     }
   };
-
-app.post(
-  '/api/sync',
-  syncWebsitePages
-);
-
-app.post(
-  '/api/sync/discover',
-  syncWebsitePages
-);
-
-/* =========================================================
-   STATIC FILES
-========================================================= */
-app.use(
-  '/media',
-  express.static(MEDIA_ROOT, {
-    fallthrough: false,
-    index: false
-  })
-);
-app.use(
-  '/content',
-  express.static(
-    path.join(
-      ROOT,
-      'content'
-    )
-  )
-);
-
-app.use(
-  express.static(
-    path.join(
-      ROOT,
-      'public'
-    )
-  )
-);
-
-app.get('*', (req, res) => {
-  res.sendFile(
-    path.join(
-      ROOT,
-      'public',
-      'index.html'
-    )
-  );
-});
-
-/* =========================================================
-   START SERVER
-========================================================= */
-
-app.listen(PORT, () => {
-  console.log(
-    `CollegeCMS running on http://localhost:${PORT}`
-  );
-});
+}
