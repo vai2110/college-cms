@@ -13,6 +13,22 @@
           "status": "live"
         }
       ]
+    },
+    {
+      "id": "soa-bhubaneswar",
+      "name": "Siksha 'O' Anusandhan (SOA), Bhubaneswar",
+      "slug": "soa-bhubaneswar",
+      "pages": [
+        {"id":"overview","name":"Overview","type":"overview","source":"content/soa-bhubaneswar/overview.html","status":"live"},
+        {"id":"btech","name":"B.Tech","type":"course","source":"content/soa-bhubaneswar/btech.html","status":"live"},
+        {"id":"mbbs","name":"MBBS","type":"course","source":"content/soa-bhubaneswar/mbbs.html","status":"live"},
+        {"id":"bds","name":"BDS","type":"course","source":"content/soa-bhubaneswar/bds.html","status":"live"},
+        {"id":"bpharm","name":"B.Pharm","type":"course","source":"content/soa-bhubaneswar/bpharm.html","status":"live"},
+        {"id":"bsc-nursing","name":"B.Sc Nursing","type":"course","source":"content/soa-bhubaneswar/bsc-nursing.html","status":"live"},
+        {"id":"bsc-agriculture","name":"B.Sc Agriculture","type":"course","source":"content/soa-bhubaneswar/bsc-agriculture.html","status":"live"},
+        {"id":"bba-integrated-mba","name":"BBA / Integrated MBA","type":"course","source":"content/soa-bhubaneswar/bba-integrated-mba.html","status":"live"},
+        {"id":"placements","name":"Placements","type":"placements","source":"content/soa-bhubaneswar/placements.html","status":"live"}
+      ]
     }
   ]
 }
