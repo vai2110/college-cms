@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CollegeDecoded – College Search</title>
-<meta name="description" content="Search CollegeDecoded college overview pages by full name, abbreviation, short name, city, common spelling and student search variations.">
+<meta name="description" content="Search CollegeDecoded college overview pages by full name, abbreviation, short name, city, spelling variation and student search terms.">
 <style>
 :root{--blue:#173f82;--blue2:#2563eb;--navy:#102a56;--bg:#f5f7fb;--card:#fff;--line:#dfe5ed;--ink:#172033;--muted:#64748b}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--ink)}
@@ -15,211 +15,54 @@ a{text-decoration:none;color:inherit}.nav{height:64px;background:#fff;border-bot
 </head>
 <body>
 <header class="nav"><div class="nav-inner"><a class="brand" href="./">College<span>Decoded</span></a><span style="font-size:12px;color:#64748b">College Search</span></div></header>
-<section class="hero">
-<div class="container" style="text-align:center">
-<div class="eyebrow">Student-first college discovery</div>
-<h1>Find your college in seconds.</h1>
+<section class="hero"><div class="container" style="text-align:center">
+<div class="eyebrow">Student-first college discovery</div><h1>Find your college in seconds.</h1>
 <p>Search using the official name, abbreviation, short name, city, common spelling or the way students normally type it.</p>
 <form class="search-wrap" id="searchForm" autocomplete="off">
-<input class="search" id="collegeSearch" aria-label="Search college" placeholder="Try: IIMA, IIM Ahmedabad, SIBM, IBS Hyd, PUMBA..." autofocus>
+<input class="search" id="collegeSearch" aria-label="Search college" placeholder="Try: IIT DMS, SIBM, IBS Hyd, PUMBA..." autofocus>
 <button class="search-btn" type="submit" aria-label="Search">⌕</button>
 <div class="hint">Examples: “IIT DMS” · “Symbiosis Nagpur” · “IBS Hyd” · “SIES MMS” · “SDMIMD Mysuru”</div>
-<div class="search-status" id="searchStatus" aria-live="polite"></div>
-<div class="results" id="results"></div>
-</form>
-</div>
-</section>
-<main class="content"><div class="container">
-<h2 class="section-title">Explore CollegeDecoded</h2>
-<p class="section-copy">Every registered college overview page is included in the search index. Search matching is case-insensitive, punctuation-tolerant and typo-tolerant.</p>
-<div class="college-grid" id="collegeGrid"></div>
-</div></main>
+<div class="search-status" id="searchStatus" aria-live="polite"></div><div class="results" id="results"></div>
+</form></div></section>
+<main class="content"><div class="container"><h2 class="section-title">Explore CollegeDecoded</h2>
+<p class="section-copy">Search is built for real student inputs: abbreviations, short names, city variants, punctuation differences, word-order changes and minor spelling mistakes.</p>
+<div class="college-grid"><a class="college-card" href="./content/iit-delhi-dms/overview.html"><b>IIT Delhi DMS</b><span>Open Overview</span></a>
+<a class="college-card" href="./content/soa-bhubaneswar/overview.html"><b>Siksha 'O' Anusandhan (SOA), Bhubaneswar</b><span>Open Overview</span></a>
+<a class="college-card" href="./content/sibm-nagpur/overview.html"><b>Symbiosis Institute of Business Management, Nagpur</b><span>Open Overview</span></a>
+<a class="college-card" href="./content/sicsr-pune/overview.html"><b>Symbiosis Institute of Computer Studies and Research, Pune</b><span>Open Overview</span></a>
+<a class="college-card" href="./content/sims-pune/overview.html"><b>Symbiosis Institute of Management Studies, Pune</b><span>Open Overview</span></a>
+<a class="college-card" href="./content/scit-pune/overview.html"><b>Symbiosis Centre for Information Technology, Pune</b><span>Open Overview</span></a>
+<a class="college-card" href="./content/ssmc-bangalore/overview.html"><b>Symbiosis School of Media and Communication, Bengaluru</b><span>Open Overview</span></a>
+<a class="college-card" href="./content/asia-pacific-institute-management-new-delhi/overview.html"><b>Asia Pacific Institute of Management, New Delhi</b><span>Open Overview</span></a>
+<a class="college-card" href="./content/pumba-pune/overview.html"><b>Department of Management Sciences (PUMBA), Pune</b><span>Open Overview</span></a>
+<a class="college-card" href="./content/vjim-hyderabad/overview.html"><b>Vignana Jyothi Institute of Management, Hyderabad</b><span>Open Overview</span></a>
+<a class="college-card" href="./content/xime-bangalore/overview.html"><b>Xavier Institute of Management &amp; Entrepreneurship, Bangalore</b><span>Open Overview</span></a>
+<a class="college-card" href="./content/ims-ghaziabad/overview.html"><b>Institute of Management Studies, Ghaziabad</b><span>Open Overview</span></a>
+<a class="college-card" href="./content/ipe-hyderabad/overview.html"><b>Institute of Public Enterprise, Hyderabad</b><span>Open Overview</span></a>
+<a class="college-card" href="./content/ibs-hyderabad/overview.html"><b>ICFAI Business School, Hyderabad</b><span>Open Overview</span></a>
+<a class="college-card" href="./content/sdmimd-mysore/overview.html"><b>SDM Institute for Management Development, Mysore</b><span>Open Overview</span></a>
+<a class="college-card" href="./content/siescoms-navi-mumbai/overview.html"><b>SIES College of Management Studies, Navi Mumbai</b><span>Open Overview</span></a></div></div></main>
 <script>
-const BASE='./';
-const REGISTRY_URL='./data/registry.json';
-let colleges=[];
-let selectedIndex=-1;
-
-/*
-  Search aliases for EVERY college currently registered in data/registry.json.
-  Keep these broad enough for real student searches, but specific enough to
-  avoid ambiguous matches such as SIES/SIESCOMS or IPE/IBS.
-*/
-const ALIASES={
- 'iit-delhi-dms':[
-  'iit delhi dms','dms iit delhi','dms iit','iit dms','iitd dms','dms iitd',
-  'department of management studies iit delhi','department of management studies iitd',
-  'iit delhi management studies','iit delhi mba','dms iit delhi mba'
- ],
- 'soa-bhubaneswar':[
-  'soa','soa bhubaneswar','soa bbsr','soa bhubaneshwar','soa odisha','soa university',
-  'siksha o anusandhan','siksha o anusandhan university','siksha o anusandhan bhubaneswar',
-  'soa international university','soa institute','soa mba','soa college'
- ],
- 'sibm-nagpur':[
-  'sibm','sibm nagpur','sibm nagpur mba','symbiosis nagpur','symbiosis institute nagpur',
-  'symbiosis institute of business management nagpur','symbiosis business school nagpur',
-  'sibm nagpur symbiosis','sibm ngp','symbiosis nagpur mba'
- ],
- 'sicsr-pune':[
-  'sicsr','sicsr pune','symbiosis sicsr','symbiosis computer studies',
-  'symbiosis institute computer studies','symbiosis institute of computer studies and research',
-  'symbiosis institute computer studies pune','sicsr symbiosis pune','sicsr bca','sicsr mba'
- ],
- 'sims-pune':[
-  'sims','sims pune','symbiosis sims','symbiosis institute management studies',
-  'symbiosis institute of management studies pune','symbiosis management studies pune',
-  'sims khadki','sims pune mba','sims defence mba','symbiosis sims pune'
- ],
- 'scit-pune':[
-  'scit','scit pune','symbiosis scit','symbiosis centre information technology',
-  'symbiosis centre for information technology','symbiosis centre for information technology pune',
-  'scit symbiosis pune','scit mba','scit pune mba','scit itbm','scit dsda'
- ],
- 'ssmc-bangalore':[
-  'ssmc','ssmc bangalore','ssmc bengaluru','symbiosis school media communication',
-  'symbiosis school of media and communication','symbiosis school of media and communication bengaluru',
-  'symbiosis media communication bangalore','ssmc bangalore mba','ssmc bengaluru mba'
- ],
- 'asia-pacific-institute-management-new-delhi':[
-  'asia pacific institute','asia pacific institute of management','asia pacific institute delhi',
-  'asia pacific management delhi','apim delhi','apim new delhi','aipm delhi','apim',
-  'asia pacific institute of management new delhi','asia pacific institute management delhi',
-  'asia pacific pgdm','apim pgdm'
- ],
- 'pumba-pune':[
-  'pumba','pumba pune','dms pumba','dms pune','department management sciences pune',
-  'department of management sciences pumba','department of management sciences pune',
-  'savitribai phule pune university mba','sppu mba','pumba mba','pumba sppu','pumba university pune'
- ],
- 'vjim-hyderabad':[
-  'vjim','vjim hyderabad','vignana jyothi','vignana jyothi institute management',
-  'vignana jyothi institute of management','vignana jyothi institute of management hyderabad',
-  'vjim hyderabad pgdm','vjim pgdm','vignana jyothi pgdm','vjim bachupally'
- ],
- 'xime-bangalore':[
-  'xime','xime bangalore','xime bengaluru','xime bangalore pgdm','xime bangalore mba',
-  'xavier institute management entrepreneurship','xavier institute of management and entrepreneurship',
-  'xavier institute management entrepreneurship bangalore','xime blr','xime pgdm','xime ba','xime business analytics'
- ],
- 'ims-ghaziabad':[
-  'ims ghaziabad','ims gzb','ims gaziabad','ims ghaziabad pgdm','ims gzb pgdm',
-  'institute management studies ghaziabad','institute of management studies ghaziabad',
-  'ims ghaziabad mba','ims gzb mba','ims ghaziabad delhi ncr','ims delhi ncr ghaziabad'
- ],
- 'ipe-hyderabad':[
-  'ipe','ipe hyderabad','institute public enterprise','institute of public enterprise',
-  'institute of public enterprise hyderabad','ipe hyderabad pgdm','ipe pgdm','ipe hyderabad mba',
-  'institute public enterprise hyderabad','ipe uppal','ipe hyderabad business school'
- ],
- 'ibs-hyderabad':[
-  'ibs','ibs hyderabad','ibs hyd','ibs-h','ibsh','ibs hyderabad mba','ibs hyd mba',
-  'ibs hyderabad pgdm','ibs hyd pgdm','icfai business school','icfai business school hyderabad',
-  'icfai business school hyd','ibs hyderabad icfai','ibsat hyderabad','ibs hyderabad campus'
- ],
- 'sdmimd-mysore':[
-  'sdmimd','sdmimd mysore','sdm imd','sdmimd mysuru','sdm institute management development',
-  'sdm institute for management development','sdm institute mysore','sdmimd pgdm','sdmimd mba',
-  'sdm management development mysore','sdm imd mysore','sdmimd mysuru pgdm'
- ],
- 'siescoms-navi-mumbai':[
-  'siescoms','sies coms','sies college management studies','sies college of management studies',
-  'sies college of management studies navi mumbai','siescoms navi mumbai','sies navi mumbai',
-  'sies mms','sies mms navi mumbai','siescoms mms','siescoms mba','sies management studies',
-  'sies college nerul','sies navi mumbai mba'
- ]
-};
-
-function normalize(value){
- return (value||'').toLowerCase().normalize('NFKD')
-  .replace(/[\u0300-\u036f]/g,'').replace(/&/g,' and ')
-  .replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' ');
-}
-function compact(value){return normalize(value).replace(/\s/g,'')}
-function levenshtein(a,b){
- if(a===b)return 0;if(!a)return b.length;if(!b)return a.length;
- let prev=Array.from({length:b.length+1},(_,i)=>i);
- for(let i=1;i<=a.length;i++){
-  let cur=[i];
-  for(let j=1;j<=b.length;j++)cur[j]=Math.min(cur[j-1]+1,prev[j]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1));
-  prev=cur;
- }
- return prev[b.length];
-}
-
-function scoreCollege(c,q){
- const nq=normalize(q), cq=normalize(c.name), cs=normalize(c.slug);
- if(!nq)return 0;
- const aliases=(ALIASES[c.id]||[]).map(normalize);
- const candidates=[cq,cs,...aliases];
- let best=0;
- for(const x of candidates){
-  if(x===nq)return 10000;
-  if(x.startsWith(nq))best=Math.max(best,9000-nq.length*2);
-  if(x.includes(nq))best=Math.max(best,7600-nq.length*3);
-  const words=nq.split(' ');
-  if(words.length>1 && words.every(w=>x.includes(w)))best=Math.max(best,6800-words.length*25);
-  const cx=compact(x), cn=compact(nq);
-  const d=levenshtein(cn,cx), max=Math.max(cn.length,cx.length);
-  if(max>=4){
-   const sim=1-d/max;
-   if(sim>=.78)best=Math.max(best,5000+sim*1000);
-  }
- }
- return best;
-}
-
-function pageUrl(c){return BASE+'content/'+encodeURIComponent(c.slug)+'/overview.html'}
-function search(q){
- return colleges.map(c=>({c,score:scoreCollege(c,q)}))
-  .filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
-}
-function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
-function renderResults(q){
- const box=document.getElementById('results');
- const status=document.getElementById('searchStatus');
- selectedIndex=-1;
- if(!q.trim()){box.style.display='none';box.innerHTML='';status.textContent='';return}
- const matches=search(q).slice(0,7);
- if(!matches.length){
-  box.innerHTML='<div class="no-result">No college found. Try the full name, abbreviation, city, or a shorter spelling.</div>';
-  box.style.display='block';status.textContent='';return;
- }
- status.textContent=matches.length===1?'1 college match':'Top '+matches.length+' college matches';
- box.innerHTML=matches.map((m,i)=>`<a class="result" data-index="${i}" href="${pageUrl(m.c)}"><div class="result-name">${escapeHtml(m.c.name)}</div><div class="result-meta">Open Overview · ${escapeHtml(m.c.slug)}</div></a>`).join('');
- box.style.display='block';
-}
-function renderGrid(){
- const grid=document.getElementById('collegeGrid');
- grid.innerHTML=colleges.map(c=>`<a class="college-card" href="${pageUrl(c)}"><b>${escapeHtml(c.name)}</b><span>Open Overview →</span></a>`).join('');
-}
-async function loadRegistry(){
- try{
-  const r=await fetch(REGISTRY_URL,{cache:'no-store'});
-  if(!r.ok)throw new Error('registry');
-  const data=await r.json();
-  colleges=(data.colleges||[]).filter(c=>c&&c.slug&&c.pages&&c.pages.some(p=>p.id==='overview'));
-  renderGrid();
- }catch(e){
-  document.getElementById('collegeGrid').innerHTML='<div style="color:#b42318;font-size:13px">College index could not be loaded. Please refresh the page.</div>';
- }
-}
-const input=document.getElementById('collegeSearch');
-input.addEventListener('input',()=>renderResults(input.value));
-document.getElementById('searchForm').addEventListener('submit',e=>{
- e.preventDefault();
- const matches=search(input.value);
- if(matches.length)window.location.href=pageUrl(matches[0].c);
-});
-input.addEventListener('keydown',e=>{
- const items=[...document.querySelectorAll('.result')];
- if(e.key==='ArrowDown'&&items.length){e.preventDefault();selectedIndex=Math.min(selectedIndex+1,items.length-1);items.forEach((x,i)=>x.classList.toggle('selected',i===selectedIndex));}
- else if(e.key==='ArrowUp'&&items.length){e.preventDefault();selectedIndex=Math.max(selectedIndex-1,0);items.forEach((x,i)=>x.classList.toggle('selected',i===selectedIndex));}
- else if(e.key==='Enter'&&selectedIndex>=0&&items[selectedIndex]){e.preventDefault();items[selectedIndex].click();}
- else if(e.key==='Escape'){document.getElementById('results').style.display='none';}
-});
-document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))document.getElementById('results').style.display='none';});
-loadRegistry();
+const COLLEGES={"iit-delhi-dms":"IIT Delhi DMS","soa-bhubaneswar":"Siksha 'O' Anusandhan (SOA), Bhubaneswar","sibm-nagpur":"Symbiosis Institute of Business Management, Nagpur","sicsr-pune":"Symbiosis Institute of Computer Studies and Research, Pune","sims-pune":"Symbiosis Institute of Management Studies, Pune","scit-pune":"Symbiosis Centre for Information Technology, Pune","ssmc-bangalore":"Symbiosis School of Media and Communication, Bengaluru","asia-pacific-institute-management-new-delhi":"Asia Pacific Institute of Management, New Delhi","pumba-pune":"Department of Management Sciences (PUMBA), Pune","vjim-hyderabad":"Vignana Jyothi Institute of Management, Hyderabad","xime-bangalore":"Xavier Institute of Management & Entrepreneurship, Bangalore","ims-ghaziabad":"Institute of Management Studies, Ghaziabad","ipe-hyderabad":"Institute of Public Enterprise, Hyderabad","ibs-hyderabad":"ICFAI Business School, Hyderabad","sdmimd-mysore":"SDM Institute for Management Development, Mysore","siescoms-navi-mumbai":"SIES College of Management Studies, Navi Mumbai"};
+const ALIASES={"iit-delhi-dms":["iit delhi dms","dms iit delhi","dms iit","iit dms","iitd dms","dms iitd","iit delhi management studies","department of management studies iit delhi","department of management studies iitd","iit delhi mba","dms iit delhi mba"],"soa-bhubaneswar":["soa","soa bhubaneswar","soa bbsr","soa bhubaneshwar","soa odisha","soa university","siksha o anusandhan","siksha o anusandhan university","siksha o anusandhan bhubaneswar","siksha o anusandhan odisha","soa international university","soa institute","soa college","soa bbsr university"],"sibm-nagpur":["sibm","sibm nagpur","sibm nagpur mba","symbiosis nagpur","symbiosis institute nagpur","symbiosis institute of business management nagpur","symbiosis business school nagpur","sibm nagpur symbiosis","sibm ngp","symbiosis nagpur mba"],"sicsr-pune":["sicsr","sicsr pune","symbiosis sicsr","symbiosis computer studies","symbiosis institute computer studies","symbiosis institute of computer studies and research","symbiosis institute computer studies pune","sicsr symbiosis pune","sicsr bca","sicsr mba","symbiosis computer institute pune"],"sims-pune":["sims","sims pune","symbiosis sims","symbiosis institute management studies","symbiosis institute of management studies pune","symbiosis management studies pune","sims khadki","sims pune mba","sims defence mba","symbiosis sims pune","sims pune symbiosis"],"scit-pune":["scit","scit pune","symbiosis scit","symbiosis centre information technology","symbiosis centre for information technology","symbiosis centre for information technology pune","scit symbiosis pune","scit mba","scit pune mba","scit itbm","scit dsda","symbiosis information technology pune"],"ssmc-bangalore":["ssmc","ssmc bangalore","ssmc bengaluru","symbiosis school media communication","symbiosis school of media and communication","symbiosis school of media and communication bengaluru","symbiosis media communication bangalore","ssmc bangalore mba","ssmc bengaluru mba","symbiosis media school bangalore"],"asia-pacific-institute-management-new-delhi":["asia pacific institute","asia pacific institute of management","asia pacific institute delhi","asia pacific management delhi","apim delhi","apim new delhi","aipm delhi","apim","asia pacific institute of management new delhi","asia pacific institute management delhi","asia pacific pgdm","apim pgdm","asia pacific delhi"],"pumba-pune":["pumba","pumba pune","dms pumba","dms pune","department management sciences pune","department of management sciences pumba","department of management sciences pune","savitribai phule pune university mba","sppu mba","pumba mba","pumba sppu","pumba university pune","pumba dms","pune university mba","university of pune mba"],"vjim-hyderabad":["vjim","vjim hyderabad","vignana jyothi","vignana jyothi institute management","vignana jyothi institute of management","vignana jyothi institute of management hyderabad","vjim hyderabad pgdm","vjim pgdm","vignana jyothi pgdm","vjim bachupally","vjim hyd","vignana jyothi hyderabad"],"xime-bangalore":["xime","xime bangalore","xime bengaluru","xime bangalore pgdm","xime bangalore mba","xavier institute management entrepreneurship","xavier institute of management and entrepreneurship","xavier institute management entrepreneurship bangalore","xime blr","xime pgdm","xime ba","xime business analytics","xime bangalore college"],"ims-ghaziabad":["ims ghaziabad","ims gzb","ims gaziabad","ims ghaziabad pgdm","ims gzb pgdm","institute management studies ghaziabad","institute of management studies ghaziabad","ims ghaziabad mba","ims gzb mba","ims ghaziabad delhi ncr","ims delhi ncr ghaziabad","ims ghaziabad college","ims gzb college"],"ipe-hyderabad":["ipe","ipe hyderabad","institute public enterprise","institute of public enterprise","institute of public enterprise hyderabad","ipe hyderabad pgdm","ipe pgdm","ipe hyderabad mba","institute public enterprise hyderabad","ipe uppal","ipe hyderabad business school","ipe hyd"],"ibs-hyderabad":["ibs","ibs hyderabad","ibs hyd","ibs h","ibsh","ibs hyderabad mba","ibs hyd mba","ibs hyderabad pgdm","ibs hyd pgdm","icfai business school","icfai business school hyderabad","icfai business school hyd","icfai hyderabad","icfai hyd","ibs hyderabad icfai","ibsat hyderabad","ibs hyderabad campus","ibs hyd college"],"sdmimd-mysore":["sdmimd","sdm imd","sdm mysore","sdm mysuru","sdmimd mysore","sdmimd mysuru","sdm institute management development","sdm institute for management development","sdm institute mysore","sdmimd pgdm","sdmimd mba","sdm management development mysore","sdm imd mysore","sdmimd mysuru pgdm","sdmimd college mysore"],"siescoms-navi-mumbai":["siescoms","sies coms","sies","sies college management studies","sies college of management studies","sies college of management studies navi mumbai","siescoms navi mumbai","sies navi mumbai","sies mms","sies mms navi mumbai","siescoms mms","siescoms mba","sies management studies","sies college nerul","sies navi mumbai mba","siescoms nerul","sies management college"]};
+const collegeList=Object.entries(COLLEGES).map(([id,name])=>({id,name,aliases:ALIASES[id]||[]}));
+const cityVariants={bangalore:['bengaluru','blr'],bengaluru:['bangalore','blr'],mysore:['mysuru'],mysuru:['mysore'],bhubaneswar:['bbsr','bhubaneshwar'],bbsr:['bhubaneswar'],hyderabad:['hyd'],hyd:['hyderabad'],ghaziabad:['gzb','gaziabad'],gzb:['ghaziabad'],pune:['pune'],nagpur:['ngp'],'navi mumbai':['nerul'],nerul:['navi mumbai'],'new delhi':['delhi','new delhi'],delhi:['new delhi']};
+const genericTerms=new Set(['college','university','institute','school','department','studies','management','business','technology','centre','center','of','the','and','for','in','at','mba','pgdm','campus','admission','admissions','fees','fee','cutoff','placements','placement']);
+function normalize(v){return(v||'').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/&/g,' and ').replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' ')}
+function compact(v){return normalize(v).replace(/\s/g,'')}
+function tokens(v){return normalize(v).split(' ').filter(Boolean)}
+function expandedTokens(v){const out=new Set();for(const t of tokens(v)){out.add(t);(cityVariants[t]||[]).forEach(x=>out.add(x))}return out}
+function lev(a,b){if(a===b)return 0;if(!a)return b.length;if(!b)return a.length;let p=Array.from({length:b.length+1},(_,i)=>i);for(let i=1;i<=a.length;i++){const c=[i];for(let j=1;j<=b.length;j++)c[j]=Math.min(c[j-1]+1,p[j]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c}return p[b.length]}
+function generated(c){const vals=new Set(c.aliases.map(normalize));vals.add(normalize(c.name));const nt=tokens(c.name).filter(t=>!genericTerms.has(t));if(nt.length){vals.add(nt.join(' '));vals.add(nt.join(''));vals.add(nt.map(t=>t[0]).join(''))}const significant=tokens(c.name).filter(t=>!['of','the','and','for','in','at'].includes(t));if(significant.length>1){vals.add(significant.join(' '));vals.add(significant.slice(0,-1).join(' '))}return[...vals].filter(Boolean)}
+const SEARCH_INDEX=collegeList.map(c=>({...c,variants:generated(c)}));
+function score(c,q){const nq=normalize(q);if(!nq)return 0;const qtokens=tokens(nq);const qcompact=compact(nq);let best=0;for(const a of c.variants){const na=normalize(a),ac=compact(a);if(na===nq)return 10000;if(ac===qcompact&&qcompact.length>=3)return 9900;const at=expandedTokens(na);const qt=new Set(qtokens.map(t=>cityVariants[t]?.[0]||t));const allTokens=[...qt].every(t=>at.has(t)||[...at].some(x=>x.length>=4&&lev(t,x)<=1));if(allTokens&&qtokens.length>=1)best=Math.max(best,9000-qt.size*80);if(na.includes(nq)&&nq.length>=3)best=Math.max(best,7600+nq.length);if(qtokens.length>=2&&qtokens.every(t=>na.includes(t)))best=Math.max(best,8200-qtokens.length*40);if(qcompact.length>=4&&ac.length>=4){const sim=1-lev(qcompact,ac)/Math.max(qcompact.length,ac.length);if(sim>=.82)best=Math.max(best,5600+sim*1200)}}if(nq.length<=3&&best<9900)return 0;return best}
+function search(q){return SEARCH_INDEX.map(c=>({c,score:score(c,q)})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score)}
+function url(c){return'./content/'+encodeURIComponent(c.id)+'/overview.html'}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+const input=document.getElementById('collegeSearch'),box=document.getElementById('results'),status=document.getElementById('searchStatus');
+function render(q){const matches=search(q).slice(0,7);if(!normalize(q)){box.style.display='none';box.innerHTML='';status.textContent='';return}if(!matches.length){box.innerHTML='<div class="no-result">No college found. Try a fuller college name, abbreviation or city.</div>';box.style.display='block';status.textContent='';return}status.textContent=matches.length===1?'1 college match':'Top '+matches.length+' matches';box.innerHTML=matches.map(m=>`<a class="result" href="${url(m.c)}"><div class="result-name">${esc(m.c.name)}</div><div class="result-meta">Open college overview</div></a>`).join('');box.style.display='block'}
+input.addEventListener('input',e=>render(e.target.value));
+document.getElementById('searchForm').addEventListener('submit',e=>{e.preventDefault();const matches=search(input.value);if(!matches.length)return;const top=matches[0],second=matches[1];const unique=top.score>=9000&&(!second||top.score-second.score>=250);if(unique)window.location.href=url(top.c);else render(input.value)});
+input.addEventListener('keydown',e=>{if(e.key==='Escape'){input.value='';render('')}});
 </script>
-</body>
-</html>
+</body></html>
