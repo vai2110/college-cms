@@ -62,7 +62,7 @@ function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;',
 const input=document.getElementById('collegeSearch'),box=document.getElementById('results'),status=document.getElementById('searchStatus');
 function render(q){const matches=search(q).slice(0,7);if(!normalize(q)){box.style.display='none';box.innerHTML='';status.textContent='';return}if(!matches.length){box.innerHTML='<div class="no-result">No college found. Try a fuller college name, abbreviation or city.</div>';box.style.display='block';status.textContent='';return}status.textContent=matches.length===1?'1 college match':'Top '+matches.length+' matches';box.innerHTML=matches.map(m=>`<a class="result" href="${url(m.c)}"><div class="result-name">${esc(m.c.name)}</div><div class="result-meta">Open college overview</div></a>`).join('');box.style.display='block'}
 input.addEventListener('input',e=>render(e.target.value));
-document.getElementById('searchForm').addEventListener('submit',e=>{e.preventDefault();const matches=search(input.value);if(!matches.length)return;const top=matches[0],second=matches[1];const unique=top.score>=9000&&(!second||top.score-second.score>=250);if(unique)window.location.href=url(top.c);else render(input.value)});
+document.getElementById('searchForm').addEventListener('submit',e=>{e.preventDefault();const matches=search(input.value);if(!matches.length)return;const top=matches[0],second=matches[1];const unique=top.score>=8200&&(!second||top.score-second.score>=250);if(unique)window.location.href=url(top.c);else render(input.value)});
 input.addEventListener('keydown',e=>{if(e.key==='Escape'){input.value='';render('')}});
 </script>
 </body></html>
