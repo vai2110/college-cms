@@ -50,6 +50,14 @@
       "pages": [
         {"id":"overview","name":"Overview","type":"overview","source":"content/sims-pune/overview.html","status":"live"}
       ]
+    },
+    {
+      "id": "scit-pune",
+      "name": "Symbiosis Centre for Information Technology, Pune",
+      "slug": "scit-pune",
+      "pages": [
+        {"id":"overview","name":"Overview","type":"overview","source":"content/scit-pune/overview.html","status":"live"}
+      ]
     }
   ]
 }
