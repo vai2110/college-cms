@@ -14,6 +14,7 @@
     {"id":"ims-ghaziabad","name":"Institute of Management Studies, Ghaziabad","slug":"ims-ghaziabad","pages":[{"id":"overview","name":"Overview","type":"overview","source":"content/ims-ghaziabad/overview.html","status":"live"}]},
     {"id":"ipe-hyderabad","name":"Institute of Public Enterprise, Hyderabad","slug":"ipe-hyderabad","pages":[{"id":"overview","name":"Overview","type":"overview","source":"content/ipe-hyderabad/overview.html","status":"live"}]},
     {"id":"ibs-hyderabad","name":"ICFAI Business School, Hyderabad","slug":"ibs-hyderabad","pages":[{"id":"overview","name":"Overview","type":"overview","source":"content/ibs-hyderabad/overview.html","status":"live"}]},
-    {"id":"sdmimd-mysore","name":"SDM Institute for Management Development, Mysore","slug":"sdmimd-mysore","pages":[{"id":"overview","name":"Overview","type":"overview","source":"content/sdmimd-mysore/overview.html","status":"live"}]}
+    {"id":"sdmimd-mysore","name":"SDM Institute for Management Development, Mysore","slug":"sdmimd-mysore","pages":[{"id":"overview","name":"Overview","type":"overview","source":"content/sdmimd-mysore/overview.html","status":"live"}]},
+    {"id":"siescoms-navi-mumbai","name":"SIES College of Management Studies, Navi Mumbai","slug":"siescoms-navi-mumbai","pages":[{"id":"overview","name":"Overview","type":"overview","source":"content/siescoms-navi-mumbai/overview.html","status":"live"}]}
   ]
 }
