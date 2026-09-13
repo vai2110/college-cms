@@ -1,116 +1,64 @@
 #!/usr/bin/env python3
-"""Build the CollegeDecoded homepage search index.
-
-The 100-college master list is the canonical naming source. Only colleges that
-have an actual live overview.html in this repository receive a redirect URL.
-This prevents dead redirects while making search vocabulary match the master
-list and the existing CollegeDecoded overview pages.
-"""
 from pathlib import Path
-import html
-import json
-import re
+import html,json,re
+ROOT=Path(__file__).resolve().parents[1]; OUT=ROOT/'search-index.json'; MASTER=ROOT/'data/college-search-master.json'
+BASE='https://vai2110.github.io/mba-admission-portal/'
+EXTERNAL={
+'Indian Institute of Management Ahmedabad':('iim-ahmedabad.html','Ahmedabad'),
+'Indian Institute of Management Bangalore':('iim-bangalore.html','Bangalore'),
+'Indian Institute of Management Kozhikode':('iim-kozhikode.html','Kozhikode'),
+'Indian Institute of Technology Delhi':('iit-delhi-dms.html','Delhi'),
+'Indian Institute of Management Lucknow':('iim-lucknow.html','Lucknow'),
+'Indian Institute of Management, Mumbai':('iim-mumbai.html','Mumbai'),
+'Indian Institute of Management Calcutta':('iim-calcutta.html','Calcutta'),
+'Indian Institute of Management Indore':('iim-indore.html','Indore'),
+'Management Development Institute':('mdi-gurugram.html','Gurugram'),
+'XLRI - Xavier School of Management':('xlri-jamshedpur.html','Jamshedpur'),
+'Symbiosis Institute of Business Management':('sibm-pune.html','Pune'),
+'Indian Institute of Technology Kharagpur':('iit-kharagpur.html','Kharagpur'),
+'Indian Institute of Technology Madras':('iit-madras.html','Chennai'),
+'Indian Institute of Technology Bombay':('iit-bombay.html','Mumbai'),
+'Indian Institute of Management Raipur':('iim-raipur.html','Raipur'),
+'Indian Institute of Management Tiruchirappalli':('iim-trichy.html','Tiruchirappalli'),
+'Indian Institute of Foreign Trade':('iift.html','Delhi'),
+'Indian Institute of Management Ranchi':('iim-ranchi.html','Ranchi'),
+'Indian Institute of Management Rohtak':('iim-rohtak.html','Rohtak'),
+'S. P. Jain Institute of Management and Research':('spjimr.html','Mumbai')}
+CITY={'bangalore':['bengaluru','blr'],'bengaluru':['bangalore','blr'],'delhi':['new delhi'],'new delhi':['delhi'],'mumbai':['bombay'],'bombay':['mumbai'],'gurugram':['gurgaon'],'gurgaon':['gurugram'],'mysore':['mysuru'],'mysuru':['mysore'],'bhubaneswar':['bbsr','bhubaneshwar'],'bbsr':['bhubaneswar'],'hyderabad':['hyd'],'hyd':['hyderabad'],'ghaziabad':['gzb','gaziabad'],'gzb':['ghaziabad'],'pune':[],'calcutta':['kolkata'],'kolkata':['calcutta']}
+EXTRA={'iit-delhi-dms':['IIT DMS','DMS IIT Delhi','IIT Delhi DMS','Department of Management Studies IIT Delhi','IITD DMS'],'soa-bhubaneswar':['SOA','SOA University','SOA Bhubaneswar','SOA BBSR'], 'sibm-nagpur':['SIBM Nagpur','Symbiosis Nagpur'],'sicsr-pune':['SICSR','SICSR Pune'],'sims-pune':['SIMS','SIMS Pune'],'scit-pune':['SCIT','SCIT Pune'],'ssmc-bangalore':['SSMC','SSMC Bangalore','SSMC Bengaluru'],'pumba-pune':['PUMBA','PUMBA Pune','DMS PUMBA','DMS Pune'],'vjim-hyderabad':['VJIM','VJIM Hyderabad','VJIM Hyd'],'xime-bangalore':['XIME','XIME Bangalore','XIME Bengaluru'],'ims-ghaziabad':['IMS Ghaziabad','IMS Gzb'],'ipe-hyderabad':['IPE','IPE Hyderabad','IPE Hyd'],'ibs-hyderabad':['IBS','IBS Hyderabad','IBS Hyd','ICFAI Business School Hyderabad','ICFAI Hyderabad','IBSH'],'sdmimd-mysore':['SDMIMD','SDM IMD','SDM Mysore','SDMIMD Mysuru'],'siescoms-navi-mumbai':['SIESCOMS','SIES COMS','SIES','SIES MMS','SIES Nerul','SIESCOMS Navi Mumbai']}
 
-ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "search-index.json"
-MASTER = ROOT / "data" / "college-search-master.json"
-
-CITY_ALIASES = {
-    "bengaluru": ["bangalore", "blr"], "bangalore": ["bengaluru", "blr"],
-    "mysore": ["mysuru"], "mysuru": ["mysore"],
-    "bhubaneswar": ["bbsr", "bhubaneshwar"], "bbsr": ["bhubaneswar"],
-    "hyderabad": ["hyd"], "hyd": ["hyderabad"],
-    "ghaziabad": ["gzb", "gaziabad"], "gzb": ["ghaziabad"],
-    "navi mumbai": ["nerul"], "nerul": ["navi mumbai"],
-    "new delhi": ["delhi"], "delhi": ["new delhi"],
-}
-
-EXTRA_ALIASES = {
-    "iit-delhi-dms": ["IIT Delhi", "IIT Delhi DMS", "DMS IIT Delhi", "DMS IIT", "IIT DMS", "Department of Management Studies IIT Delhi", "IITD DMS"],
-    "soa-bhubaneswar": ["Siksha O Anusandhan", "Siksha 'O' Anusandhan", "SOA", "SOA University", "SOA Bhubaneswar", "SOA BBSR"],
-    "sibm-nagpur": ["SIBM Nagpur", "Symbiosis Nagpur", "Symbiosis Institute Nagpur", "SIBM Nagpur MBA"],
-    "sicsr-pune": ["SICSR", "SICSR Pune", "Symbiosis SICSR"],
-    "sims-pune": ["SIMS", "SIMS Pune", "Symbiosis SIMS"],
-    "scit-pune": ["SCIT", "SCIT Pune", "Symbiosis SCIT"],
-    "ssmc-bangalore": ["SSMC", "SSMC Bangalore", "SSMC Bengaluru", "Symbiosis SSMC"],
-    "asia-pacific-institute-management-new-delhi": ["APIM", "APIM Delhi", "Asia Pacific Institute", "Asia Pacific Institute Delhi", "Asia Pacific Management Delhi"],
-    "pumba-pune": ["PUMBA", "PUMBA Pune", "DMS Pune", "DMS PUMBA", "SPPU MBA"],
-    "vjim-hyderabad": ["VJIM", "VJIM Hyderabad", "VJIM Hyd", "Vignana Jyothi"],
-    "xime-bangalore": ["XIME", "XIME Bangalore", "XIME Bengaluru", "Xavier Management Entrepreneurship Bangalore"],
-    "ims-ghaziabad": ["IMS Ghaziabad", "IMS Gzb", "IMS Gaziabad"],
-    "ipe-hyderabad": ["IPE", "IPE Hyderabad", "IPE Hyd", "Institute of Public Enterprise Hyderabad"],
-    "ibs-hyderabad": ["IBS", "IBS Hyderabad", "IBS Hyd", "ICFAI Business School Hyderabad", "ICFAI Hyderabad", "IBSH"],
-    "sdmimd-mysore": ["SDMIMD", "SDM IMD", "SDM Mysore", "SDMIMD Mysuru", "SDMIMD Mysore"],
-    "siescoms-navi-mumbai": ["SIESCOMS", "SIES COMS", "SIES", "SIES MMS", "SIES Nerul", "SIESCOMS Navi Mumbai"],
-}
-
-STOP = {"of", "the", "and", "for", "in", "at", "to", "a", "an", "deemed", "university", "institute", "school", "college"}
-
-def strip_tags(s): return re.sub(r"<[^>]+>", " ", s)
-def clean(s):
-    s = html.unescape(s or "")
-    return re.sub(r"\s+", " ", strip_tags(s)).strip()
-def first(pattern, text):
-    m = re.search(pattern, text, flags=re.I | re.S)
-    return clean(m.group(1)) if m else ""
-def norm(s): return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9]+", " ", (s or "").lower())).strip()
-def tokens(s): return norm(s).split()
-def acronym(s): return "".join(t[0] for t in tokens(s) if t not in STOP)
-def slug_words(slug): return re.sub(r"[-_]+", " ", slug).strip()
-
-def title_for(text, slug):
-    title = first(r"<title[^>]*>(.*?)</title>", text)
-    if title:
-        title = re.sub(r"\s*[:|–—-]\s*(?:Courses|Admission|Fees|Cutoff|Placements|Overview|College|MBA|PGDM).*?$", "", title, flags=re.I)
-        title = re.sub(r"\s+20(?:2[4-9]|3\d)\b.*$", "", title, flags=re.I)
-    h1 = first(r"<h1[^>]*>(.*?)</h1>", text)
-    return title or h1 or slug_words(slug).title()
-
-def aliases_for(name, slug, title):
-    values = {name, title, slug_words(slug)}
-    values.update(EXTRA_ALIASES.get(slug, []))
-    seed = list(values)
-    for value in seed:
-        a = acronym(value)
-        if 3 <= len(a) <= 14: values.add(a)
-        ts = [t for t in tokens(value) if len(t) > 1]
+def clean(s): return re.sub(r'\s+',' ',re.sub(r'<[^>]+>',' ',html.unescape(s or ''))).strip()
+def norm(s): return re.sub(r'\s+',' ',re.sub(r'[^a-z0-9]+',' ',(s or '').lower())).strip()
+def toks(s): return norm(s).split()
+def acr(s):
+    stop={'of','the','and','for','in','at','to','a','an','deemed','university','institute','school','college'}
+    return ''.join(x[0] for x in toks(s) if x not in stop)
+def title(text,slug):
+    m=re.search(r'<title[^>]*>(.*?)</title>',text,re.I|re.S); t=clean(m.group(1)) if m else ''
+    m=re.search(r'<h1[^>]*>(.*?)</h1>',text,re.I|re.S); h=clean(m.group(1)) if m else ''
+    return t or h or re.sub(r'[-_]',' ',slug).title()
+def aliases(name,slug):
+    vals={name,re.sub(r'[-_]',' ',slug)}|set(EXTRA.get(slug,[]))
+    for v in list(vals):
+        a=acr(v)
+        if len(a)>=3: vals.add(a)
+        ts=[x for x in toks(v) if len(x)>1]
         for i in range(len(ts)):
-            for j in range(i + 1, min(len(ts), i + 4)):
-                combo = " ".join(ts[i:j+1])
-                if len(combo) >= 4: values.add(combo)
-        low = norm(value)
-        for city, variants in CITY_ALIASES.items():
-            if city in low:
-                for v in variants:
-                    values.add(re.sub(r"\b" + re.escape(city) + r"\b", v, low))
-    return sorted({norm(v) for v in values if norm(v)})
-
-master = json.loads(MASTER.read_text(encoding="utf-8"))
-master_names = [x["name"] for x in master.get("colleges", [])]
-
-items = []
-registry_path = ROOT / "data" / "registry.json"
-registry = json.loads(registry_path.read_text(encoding="utf-8")) if registry_path.exists() else {"colleges": []}
-registry_by_slug = {c.get("slug"): c.get("name", "") for c in registry.get("colleges", [])}
-
-for page in sorted((ROOT / "content").glob("*/overview.html")):
-    slug = page.parent.name
-    text = page.read_text(encoding="utf-8", errors="ignore")
-    title = title_for(text, slug)
-    name = registry_by_slug.get(slug) or first(r"<h1[^>]*>(.*?)</h1>", text) or title or slug_words(slug).title()
-    items.append({
-        "slug": slug,
-        "name": clean(name),
-        "title": clean(title),
-        "url": f"./content/{slug}/overview.html",
-        "aliases": aliases_for(clean(name), slug, clean(title)),
-    })
-
-OUT.write_text(json.dumps({
-    "version": 3,
-    "master_list_count": len(master_names),
-    "master_list_source": "data/college-search-master.json",
-    "live_overview_count": len(items),
-    "colleges": items,
-}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-print(f"Generated {OUT}: {len(items)} live overview pages indexed against {len(master_names)} master colleges.")
+            for j in range(i+1,min(len(ts),i+3)+1): vals.add(' '.join(ts[i:j]))
+        nv=norm(v)
+        for c,vs in CITY.items():
+            if c in nv:
+                for x in vs: vals.add(re.sub(r'\b'+re.escape(c)+r'\b',x,nv))
+    return sorted({norm(x) for x in vals if norm(x)})
+master=json.loads(MASTER.read_text(encoding='utf-8')); master_names=[x['name'] for x in master.get('colleges',[])]
+registry_path=ROOT/'data/registry.json'; registry=json.loads(registry_path.read_text(encoding='utf-8')) if registry_path.exists() else {'colleges':[]}
+items=[]; covered=set()
+for c in registry.get('colleges',[]):
+    slug=c.get('slug'); page=ROOT/'content'/slug/'overview.html'
+    if slug and page.exists():
+        text=page.read_text(encoding='utf-8',errors='ignore'); name=clean(c.get('name') or title(text,slug)); items.append({'name':name,'title':title(text,slug),'url':f'./content/{slug}/overview.html','aliases':aliases(name,slug),'location':next((x for x in CITY if x in norm(name)), '')}); covered.add(name)
+for name,(file,loc) in EXTERNAL.items():
+    if name in master_names:
+        items.append({'name':name,'title':name,'url':BASE+file,'aliases':aliases(name,file[:-5]),'location':norm(loc)}); covered.add(name)
+OUT.write_text(json.dumps({'version':4,'master_list_count':len(master_names),'live_route_count':len(items),'colleges':items},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+print(f'Generated {OUT}: {len(items)} searchable live college routes; master list has {len(master_names)} names.')
