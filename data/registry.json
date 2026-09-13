@@ -4,9 +4,7 @@
       "id": "iit-delhi-dms",
       "name": "IIT Delhi DMS",
       "slug": "iit-delhi-dms",
-      "pages": [
-        {"id":"overview","name":"Overview","type":"overview","source":"content/iit-delhi-dms/overview.html","status":"live"}
-      ]
+      "pages": [{"id":"overview","name":"Overview","type":"overview","source":"content/iit-delhi-dms/overview.html","status":"live"}]
     },
     {
       "id": "soa-bhubaneswar",
@@ -25,47 +23,14 @@
       ]
     },
     {
-      "id": "sibm-nagpur",
-      "name": "Symbiosis Institute of Business Management, Nagpur",
-      "slug": "sibm-nagpur",
-      "pages": [
-        {"id":"overview","name":"Overview","type":"overview","source":"content/sibm-nagpur/overview.html","status":"live"},
-        {"id":"mba","name":"MBA","type":"course","source":"content/sibm-nagpur/mba.html","status":"live"},
-        {"id":"mba-fabm","name":"MBA-FABM","type":"course","source":"content/sibm-nagpur/mba-fabm.html","status":"live"},
-        {"id":"placements","name":"Placements","type":"placements","source":"content/sibm-nagpur/placements.html","status":"live"}
+      "id":"sibm-nagpur","name":"Symbiosis Institute of Business Management, Nagpur","slug":"sibm-nagpur","pages":[
+        {"id":"overview","name":"Overview","type":"overview","source":"content/sibm-nagpur/overview.html","status":"live"},{"id":"mba","name":"MBA","type":"course","source":"content/sibm-nagpur/mba.html","status":"live"},{"id":"mba-fabm","name":"MBA-FABM","type":"course","source":"content/sibm-nagpur/mba-fabm.html","status":"live"},{"id":"placements","name":"Placements","type":"placements","source":"content/sibm-nagpur/placements.html","status":"live"}
       ]
     },
-    {
-      "id": "sicsr-pune",
-      "name": "Symbiosis Institute of Computer Studies and Research, Pune",
-      "slug": "sicsr-pune",
-      "pages": [
-        {"id":"overview","name":"Overview","type":"overview","source":"content/sicsr-pune/overview.html","status":"live"}
-      ]
-    },
-    {
-      "id": "sims-pune",
-      "name": "Symbiosis Institute of Management Studies, Pune",
-      "slug": "sims-pune",
-      "pages": [
-        {"id":"overview","name":"Overview","type":"overview","source":"content/sims-pune/overview.html","status":"live"}
-      ]
-    },
-    {
-      "id": "scit-pune",
-      "name": "Symbiosis Centre for Information Technology, Pune",
-      "slug": "scit-pune",
-      "pages": [
-        {"id":"overview","name":"Overview","type":"overview","source":"content/scit-pune/overview.html","status":"live"}
-      ]
-    },
-    {
-      "id": "ssmc-bangalore",
-      "name": "Symbiosis School of Media and Communication, Bengaluru",
-      "slug": "ssmc-bangalore",
-      "pages": [
-        {"id":"overview","name":"Overview","type":"overview","source":"content/ssmc-bangalore/overview.html","status":"live"}
-      ]
-    }
+    {"id":"sicsr-pune","name":"Symbiosis Institute of Computer Studies and Research, Pune","slug":"sicsr-pune","pages":[{"id":"overview","name":"Overview","type":"overview","source":"content/sicsr-pune/overview.html","status":"live"}]},
+    {"id":"sims-pune","name":"Symbiosis Institute of Management Studies, Pune","slug":"sims-pune","pages":[{"id":"overview","name":"Overview","type":"overview","source":"content/sims-pune/overview.html","status":"live"}]},
+    {"id":"scit-pune","name":"Symbiosis Centre for Information Technology, Pune","slug":"scit-pune","pages":[{"id":"overview","name":"Overview","type":"overview","source":"content/scit-pune/overview.html","status":"live"}]},
+    {"id":"ssmc-bangalore","name":"Symbiosis School of Media and Communication, Bengaluru","slug":"ssmc-bangalore","pages":[{"id":"overview","name":"Overview","type":"overview","source":"content/ssmc-bangalore/overview.html","status":"live"}]},
+    {"id":"asia-pacific-institute-management-new-delhi","name":"Asia Pacific Institute of Management, New Delhi","slug":"asia-pacific-institute-management-new-delhi","pages":[{"id":"overview","name":"Overview","type":"overview","source":"content/asia-pacific-institute-management-new-delhi/overview.html","status":"live"}]}
   ]
 }
