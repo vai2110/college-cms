@@ -8,6 +8,7 @@
     {"id":"scit-pune","name":"Symbiosis Centre for Information Technology, Pune","slug":"scit-pune","pages":[{"id":"overview","name":"Overview","type":"overview","source":"content/scit-pune/overview.html","status":"live"}]},
     {"id":"ssmc-bangalore","name":"Symbiosis School of Media and Communication, Bengaluru","slug":"ssmc-bangalore","pages":[{"id":"overview","name":"Overview","type":"overview","source":"content/ssmc-bangalore/overview.html","status":"live"}]},
     {"id":"asia-pacific-institute-management-new-delhi","name":"Asia Pacific Institute of Management, New Delhi","slug":"asia-pacific-institute-management-new-delhi","pages":[{"id":"overview","name":"Overview","type":"overview","source":"content/asia-pacific-institute-management-new-delhi/overview.html","status":"live"}]},
-    {"id":"pumba-pune","name":"Department of Management Sciences (PUMBA), Pune","slug":"pumba-pune","pages":[{"id":"overview","name":"Overview","type":"overview","source":"content/pumba-pune/overview.html","status":"live"}]}
+    {"id":"pumba-pune","name":"Department of Management Sciences (PUMBA), Pune","slug":"pumba-pune","pages":[{"id":"overview","name":"Overview","type":"overview","source":"content/pumba-pune/overview.html","status":"live"}]},
+    {"id":"vjim-hyderabad","name":"Vignana Jyothi Institute of Management, Hyderabad","slug":"vjim-hyderabad","pages":[{"id":"overview","name":"Overview","type":"overview","source":"content/vjim-hyderabad/overview.html","status":"live"}]}
   ]
 }
