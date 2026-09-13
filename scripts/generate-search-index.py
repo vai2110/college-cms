@@ -34,5 +34,7 @@ for c in registry.get('colleges',[]):
   text=page.read_text(encoding='utf-8',errors='ignore'); h=re.search(r'<h1[^>]*>(.*?)</h1>',text,re.I|re.S); name=clean(c.get('name') or (h.group(1) if h else slug)); items.append({'name':name,'title':name,'url':f'./content/{slug}/overview.html','aliases':aliases(name,slug),'location':next((k for k in CITY if k in norm(name)), '')})
 for name,(file,loc) in EXTERNAL.items():
  if name in master_names: items.append({'name':name,'title':name,'url':BASE+file,'aliases':aliases(name,file[:-5]),'location':norm(loc)})
-OUT.write_text(json.dumps({'version':5,'master_list_count':len(master_names),'live_route_count':len(items),'colleges':items},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-print(f'Generated {OUT}: {len(items)} routes; city-aware search aliases enabled.')
+OUT.write_text(json.dumps({'version':6,'master_list_count':len(master_names),'live_route_count':len(items),'live_overview_count':len(items),'generated_from':'college-search-master.json + registry.json','colleges':items},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+print(f'Generated {OUT}: {len(items)} routes; city-aware search aliases enabled; index version 6.')
+assert any(x['name']=='Indian Institute of Management Calcutta' and x['url'].endswith('/iim-calcutta.html') for x in items), 'IIM Calcutta route missing'
+assert not any(norm(x['name'])=='symbiosis institute of business management' and 'sibm' in x.get('aliases',[]) for x in items if x['url'].endswith('sibm-pune.html')), 'Generic SIBM alias regression detected'
