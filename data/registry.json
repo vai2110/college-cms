@@ -58,6 +58,14 @@
       "pages": [
         {"id":"overview","name":"Overview","type":"overview","source":"content/scit-pune/overview.html","status":"live"}
       ]
+    },
+    {
+      "id": "ssmc-bangalore",
+      "name": "Symbiosis School of Media and Communication, Bengaluru",
+      "slug": "ssmc-bangalore",
+      "pages": [
+        {"id":"overview","name":"Overview","type":"overview","source":"content/ssmc-bangalore/overview.html","status":"live"}
+      ]
     }
   ]
 }
