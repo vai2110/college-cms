@@ -13,6 +13,7 @@
     {"id":"xime-bangalore","name":"Xavier Institute of Management & Entrepreneurship, Bangalore","slug":"xime-bangalore","pages":[{"id":"overview","name":"Overview","type":"overview","source":"content/xime-bangalore/overview.html","status":"live"}]},
     {"id":"ims-ghaziabad","name":"Institute of Management Studies, Ghaziabad","slug":"ims-ghaziabad","pages":[{"id":"overview","name":"Overview","type":"overview","source":"content/ims-ghaziabad/overview.html","status":"live"}]},
     {"id":"ipe-hyderabad","name":"Institute of Public Enterprise, Hyderabad","slug":"ipe-hyderabad","pages":[{"id":"overview","name":"Overview","type":"overview","source":"content/ipe-hyderabad/overview.html","status":"live"}]},
-    {"id":"ibs-hyderabad","name":"ICFAI Business School, Hyderabad","slug":"ibs-hyderabad","pages":[{"id":"overview","name":"Overview","type":"overview","source":"content/ibs-hyderabad/overview.html","status":"live"}]}
+    {"id":"ibs-hyderabad","name":"ICFAI Business School, Hyderabad","slug":"ibs-hyderabad","pages":[{"id":"overview","name":"Overview","type":"overview","source":"content/ibs-hyderabad/overview.html","status":"live"}]},
+    {"id":"sdmimd-mysore","name":"SDM Institute for Management Development, Mysore","slug":"sdmimd-mysore","pages":[{"id":"overview","name":"Overview","type":"overview","source":"content/sdmimd-mysore/overview.html","status":"live"}]}
   ]
 }
