@@ -34,6 +34,14 @@
         {"id":"mba-fabm","name":"MBA-FABM","type":"course","source":"content/sibm-nagpur/mba-fabm.html","status":"live"},
         {"id":"placements","name":"Placements","type":"placements","source":"content/sibm-nagpur/placements.html","status":"live"}
       ]
+    },
+    {
+      "id": "sicsr-pune",
+      "name": "Symbiosis Institute of Computer Studies and Research, Pune",
+      "slug": "sicsr-pune",
+      "pages": [
+        {"id":"overview","name":"Overview","type":"overview","source":"content/sicsr-pune/overview.html","status":"live"}
+      ]
     }
   ]
 }
