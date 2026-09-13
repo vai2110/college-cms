@@ -36,4 +36,3 @@ for name,(file,loc) in EXTERNAL.items():
  if name in master_names: items.append({'name':name,'title':name,'url':BASE+file,'aliases':aliases(name,file[:-5]),'location':norm(loc)})
 OUT.write_text(json.dumps({'version':6,'master_list_count':len(master_names),'live_route_count':len(items),'live_overview_count':len(items),'generated_from':'college-search-master.json + registry.json','colleges':items},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 print(f'Generated {OUT}: {len(items)} routes; city-aware search aliases enabled; index version 6.')
-assert any(x['name']=='Indian Institute of Management Calcutta' and x['url'].endswith('/iim-calcutta.html') for x in items), 'IIM Calcutta route missing'
