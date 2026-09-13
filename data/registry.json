@@ -42,6 +42,14 @@
       "pages": [
         {"id":"overview","name":"Overview","type":"overview","source":"content/sicsr-pune/overview.html","status":"live"}
       ]
+    },
+    {
+      "id": "sims-pune",
+      "name": "Symbiosis Institute of Management Studies, Pune",
+      "slug": "sims-pune",
+      "pages": [
+        {"id":"overview","name":"Overview","type":"overview","source":"content/sims-pune/overview.html","status":"live"}
+      ]
     }
   ]
 }
