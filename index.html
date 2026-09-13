@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CollegeDecoded – College Search</title>
+<meta name="description" content="Search colleges and open their CollegeDecoded overview pages using names, abbreviations and common variations.">
+<style>
+:root{--blue:#173f82;--blue2:#2563eb;--navy:#102a56;--bg:#f5f7fb;--card:#fff;--line:#dfe5ed;--ink:#172033;--muted:#64748b}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--ink)}
+a{text-decoration:none;color:inherit}.nav{height:64px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center}.nav-inner{width:min(1180px,calc(100% - 32px));margin:auto;display:flex;justify-content:space-between;align-items:center}.brand{font-size:23px;font-weight:800;color:var(--navy)}.brand span{color:var(--blue2)}.hero{background:linear-gradient(120deg,#102a56,#2563eb);color:#fff;padding:72px 0 82px}.container{width:min(980px,calc(100% - 32px));margin:auto}.eyebrow{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#dbeafe;margin-bottom:10px}.hero h1{font-size:46px;line-height:1.12;margin:0 0 13px}.hero p{font-size:17px;color:#e7efff;margin:0 auto 26px;max-width:700px;line-height:1.6}.search-wrap{position:relative;max-width:760px;margin:auto}.search{width:100%;height:62px;border:0;border-radius:14px;padding:0 58px 0 20px;font-size:16px;box-shadow:0 12px 30px #0b245044;outline:none}.search:focus{box-shadow:0 0 0 3px #bfdbfe,0 12px 30px #0b245044}.search-btn{position:absolute;right:7px;top:7px;height:48px;width:48px;border:0;border-radius:10px;background:var(--blue2);color:#fff;font-size:19px;cursor:pointer}.hint{margin-top:11px;font-size:12px;color:#dbeafe;text-align:left}.results{max-width:760px;margin:18px auto 0;display:none;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 12px 30px rgba(15,23,42,.16);color:var(--ink);text-align:left}.result{display:block;padding:14px 17px;border-bottom:1px solid #edf0f5;cursor:pointer}.result:last-child{border-bottom:0}.result:hover,.result.selected{background:#f5f8ff}.result-name{font-weight:800;color:var(--blue);font-size:14px}.result-meta{font-size:11px;color:var(--muted);margin-top:3px}.no-result{padding:18px;color:var(--muted);font-size:13px}.content{padding:38px 0 60px}.section-title{font-size:24px;color:var(--navy);margin:0 0 8px}.section-copy{color:var(--muted);font-size:14px;margin:0 0 20px}.college-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.college-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;transition:.15s}.college-card:hover{border-color:#9bb7e9;transform:translateY(-1px);box-shadow:0 8px 20px rgba(15,23,42,.06)}.college-card b{display:block;color:var(--blue);font-size:14px;line-height:1.4}.college-card span{display:block;color:var(--muted);font-size:11px;margin-top:5px}.empty-state{display:none}
+@media(max-width:750px){.hero{padding:52px 0 60px}.hero h1{font-size:34px}.hero p{font-size:15px}.search{height:58px;font-size:15px}.search-btn{height:44px;width:44px}.college-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.college-grid{grid-template-columns:1fr}.nav{height:58px}.brand{font-size:20px}}
+</style>
+</head>
+<body>
+<header class="nav"><div class="nav-inner"><a class="brand" href="./">College<span>Decoded</span></a><span style="font-size:12px;color:#64748b">College Search</span></div></header>
+<section class="hero">
+<div class="container" style="text-align:center">
+<div class="eyebrow">Student-first college discovery</div>
+<h1>Find your college in seconds.</h1>
+<p>Search using the college's full name, abbreviation, short name, city, or a common spelling variation.</p>
+<form class="search-wrap" id="searchForm" autocomplete="off">
+<input class="search" id="collegeSearch" aria-label="Search college" placeholder="Try: IIMA, SIBM, IBS Hyderabad, PUMBA..." autofocus>
+<button class="search-btn" type="submit" aria-label="Search">⌕</button>
+<div class="hint">Examples: “IBS Hyd” · “XIME Bangalore” · “Symbiosis Nagpur” · “SIESCOMS”</div>
+<div class="results" id="results"></div>
+</form>
+</div>
+</section>
+<main class="content"><div class="container">
+<h2 class="section-title">Explore CollegeDecoded</h2>
+<p class="section-copy">All currently registered college overview pages are searchable below. New overview pages added to the registry are automatically included in the search index.</p>
+<div class="college-grid" id="collegeGrid"></div>
+</div></main>
+<script>
+const BASE='./';
+const REGISTRY_URL='./data/registry.json';
+let colleges=[];let selectedIndex=-1;
+
+// Curated aliases cover common abbreviations, short names and student search patterns.
+const ALIASES={
+ 'iit-delhi-dms':['dms iit delhi','iit dms','dms iit','department of management studies iit delhi','iit delhi management studies','dms iitd'],
+ 'soa-bhubaneswar':['soa','soa university','soa bhubaneswar','soa bbsr','soa odisha','siksha o anusandhan','siksha o anusandhan university','soa international university'],
+ 'sibm-nagpur':['sibm nagpur','sibm nagpur mba','symbiosis nagpur','symbiosis institute nagpur','symbiosis business school nagpur'],
+ 'sicsr-pune':['sicsr','sicsr pune','symbiosis computer studies','symbiosis computer studies and research','symbiosis institute computer studies pune'],
+ 'sims-pune':['sims pune','symbiosis sims','symbiosis institute management studies','symbiosis management studies pune'],
+ 'scit-pune':['scit','scit pune','symbiosis scit','symbiosis centre information technology','symbiosis centre for information technology pune'],
+ 'ssmc-bangalore':['ssmc','ssmc bangalore','ssmc bengaluru','symbiosis school media communication','symbiosis media communication bangalore'],
+ 'asia-pacific-institute-management-new-delhi':['asia pacific institute','asia pacific institute of management','aipm delhi','apim delhi','asia pacific management delhi'],
+ 'pumba-pune':['pumba','pumba pune','dms pumba','department management sciences pune','dms pune','savitribai phule pune university mba'],
+ 'vjim-hyderabad':['vjim','vjim hyderabad','vignana jyothi','vignana jyothi institute management','vignana jyothi institute of management hyderabad'],
+ 'xime-bangalore':['xime','xime bangalore','xime bengaluru','xime bangalore pgdm','xavier institute management entrepreneurship'],
+ 'ims-ghaziabad':['ims ghaziabad','ims gzb','ims ghaziabad pgdm','institute management studies ghaziabad','ims gaziabad'],
+ 'ipe-hyderabad':['ipe','ipe hyderabad','institute public enterprise','institute of public enterprise hyderabad'],
+ 'ibs-hyderabad':['ibs hyderabad','ibs hyd','ibs-h','icfai business school','icfai business school hyderabad','ibs hyd pgdm','ibsh'],
+ 'sdmimd-mysore':['sdmimd','sdmimd mysore','sdm imd','sdm institute management development','sdm institute mysore','sdmimd mysuru'],
+ 'siescoms-navi-mumbai':['siescoms','sies','sies college management studies','sies college of management studies','siescoms navi mumbai','sies navi mumbai','sies mms']
+};
+
+function normalize(value){return (value||'').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/&/g,' and ').replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' ')}
+function compact(value){return normalize(value).replace(/\s/g,'')}
+function levenshtein(a,b){if(a===b)return 0;if(!a)return b.length;if(!b)return a.length;let prev=Array.from({length:b.length+1},(_,i)=>i);for(let i=1;i<=a.length;i++){let cur=[i];for(let j=1;j<=b.length;j++)cur[j]=Math.min(cur[j-1]+1,prev[j]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1));prev=cur}return prev[b.length]}
+function scoreCollege(c,q){
+ const nq=normalize(q), cq=normalize(c.name), cs=normalize(c.slug);
+ if(!nq)return 0;
+ const aliases=(ALIASES[c.id]||[]).map(normalize);
+ const candidates=[cq,cs,...aliases]; let best=0;
+ for(const x of candidates){if(x===nq)return 1000;if(x.startsWith(nq))best=Math.max(best,900-nq.length);if(x.includes(nq))best=Math.max(best,760-nq.length);const words=nq.split(' ');if(words.every(w=>x.includes(w)))best=Math.max(best,700-words.length*5);const d=levenshtein(compact(nq),compact(x));const max=Math.max(compact(nq).length,compact(x).length);if(max>=4){const sim=1-d/max;if(sim>=.82)best=Math.max(best,500+sim*100)}}
+ return best;
+}
+function pageUrl(c){return BASE+'content/'+encodeURIComponent(c.slug)+'/overview.html'}
+function search(q){return colleges.map(c=>({c,score:scoreCollege(c,q)})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score)}
+function renderResults(q){const box=document.getElementById('results');selectedIndex=-1;if(!q.trim()){box.style.display='none';box.innerHTML='';return}const matches=search(q).slice(0,7);if(!matches.length){box.innerHTML='<div class="no-result">No college found. Try the full name, abbreviation, city, or a shorter spelling.</div>';box.style.display='block';return}box.innerHTML=matches.map((m,i)=>`<a class="result" data-index="${i}" href="${pageUrl(m.c)}"><div class="result-name">${escapeHtml(m.c.name)}</div><div class="result-meta">Open Overview · ${escapeHtml(m.c.slug)}</div></a>`).join('');box.style.display='block'}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function renderGrid(){const grid=document.getElementById('collegeGrid');grid.innerHTML=colleges.map(c=>`<a class="college-card" href="${pageUrl(c)}"><b>${escapeHtml(c.name)}</b><span>Open Overview →</span></a>`).join('')}
+async function loadRegistry(){try{const r=await fetch(REGISTRY_URL,{cache:'no-store'});if(!r.ok)throw new Error('registry');const data=await r.json();colleges=data.colleges||[];renderGrid()}catch(e){document.getElementById('collegeGrid').innerHTML='<div style="color:#b42318;font-size:13px">College index could not be loaded. Please refresh the page.</div>'}}
+const input=document.getElementById('collegeSearch');input.addEventListener('input',()=>renderResults(input.value));
+document.getElementById('searchForm').addEventListener('submit',e=>{e.preventDefault();const matches=search(input.value);if(matches.length)window.location.href=pageUrl(matches[0].c)});
+input.addEventListener('keydown',e=>{const items=[...document.querySelectorAll('.result')];if(e.key==='ArrowDown'&&items.length){e.preventDefault();selectedIndex=Math.min(selectedIndex+1,items.length-1);items.forEach((x,i)=>x.classList.toggle('selected',i===selectedIndex))}else if(e.key==='ArrowUp'&&items.length){e.preventDefault();selectedIndex=Math.max(selectedIndex-1,0);items.forEach((x,i)=>x.classList.toggle('selected',i===selectedIndex))}else if(e.key==='Enter'&&selectedIndex>=0&&items[selectedIndex]){e.preventDefault();items[selectedIndex].click()}else if(e.key==='Escape'){document.getElementById('results').style.display='none'}});
+document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))document.getElementById('results').style.display='none'});
+loadRegistry();
+</script>
+</body></html>
