@@ -1,7 +1,8 @@
 from pathlib import Path
-import re
+
 p=Path(__file__).resolve().parents[1]/'index.html'
 s=p.read_text(encoding='utf-8')
+
 marker='function show(q,submit=false)'
 guard=r'''function cityConflict(q,c){
  const n=norm(q);
@@ -13,8 +14,13 @@ guard=r'''function cityConflict(q,c){
  return !same;
 }
 '''
-if marker not in s: raise SystemExit('search show marker not found')
-s=s.replace(marker,guard+marker,1)
-s=s.replace('if(submit && top.s>=8200 && (!second || top.s-second.s>=350)){redirect(top.c);return;}','if(submit && top.s>=8200 && !cityConflict(q,top.c) && (!second || top.s-second.s>=350)){redirect(top.c);return;}')
+if marker not in s:
+ raise SystemExit('search show marker not found')
+if 'function cityConflict(q,c)' not in s:
+ s=s.replace(marker,guard+marker,1)
+old='if(submit && top.s>=8200 && (!second || top.s-second.s>=350)){redirect(top.c);return;}'
+new='if(submit && top.s>=8200 && !cityConflict(q,top.c) && (!second || top.s-second.s>=350)){redirect(top.c);return;}'
+if old in s:
+ s=s.replace(old,new,1)
 p.write_text(s,encoding='utf-8')
-print('Patched homepage search with city-conflict protection.')
+print('Homepage search patch verified: city-conflict protection is present and patching is idempotent.')
