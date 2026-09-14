@@ -23,6 +23,8 @@ jobs:
         run: python3 scripts/patch-homepage-search.py
       - name: Build automatic college search index
         run: python3 scripts/generate-search-index.py
+      - name: Patch moved-page search routes
+        run: python3 scripts/patch-search-index.py
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
