@@ -13,19 +13,31 @@ text = text.replace(
     '<div class="mobile" id="mobileToc"><details id="mobileTocDetails"><summary>On this page</summary>',
     1,
 )
+text = text.replace(
+    '<div class="mobile" id="mobileToc"><details id="mobileTocDetails"><summary>On this page</summary>',
+    '<div class="mobile" id="mobileToc"><details id="mobileTocDetails"><summary>On this page</summary>',
+    1,
+)
 
-# Inject deterministic mobile TOC behaviour once. The CSS already keeps the
-# control fixed; this script makes each anchor scroll to the requested section
-# and closes the disclosure immediately after selection.
-marker = '</body>'
+# Replace the previous navigation script so the build remains idempotent.
+text = re.sub(r'\s*<script id="mnit-mobile-toc-fix">.*?</script>\s*', '\n', text, flags=re.S)
+
 script = r'''<script id="mnit-mobile-toc-fix">
 (function () {
   function initMobileToc() {
+    var widget = document.getElementById('mobileToc');
     var details = document.getElementById('mobileTocDetails');
-    if (!details) return;
+    var hero = document.querySelector('.hero');
+    if (!widget || !details || !hero) return;
 
-    var links = details.querySelectorAll('nav a[href^="#"]');
-    links.forEach(function (link) {
+    function updateVisibility() {
+      // Hidden while the hero is visible; fixed only after the hero has passed.
+      var visible = hero.getBoundingClientRect().bottom <= 0;
+      widget.classList.toggle('mnit-nav-visible', visible);
+      if (!visible) details.open = false;
+    }
+
+    details.querySelectorAll('nav a[href^="#"]').forEach(function (link) {
       link.addEventListener('click', function (event) {
         var href = link.getAttribute('href');
         if (!href || href === '#') return;
@@ -34,26 +46,26 @@ script = r'''<script id="mnit-mobile-toc-fix">
         if (!target) return;
 
         event.preventDefault();
-
-        // Collapse first so the fixed control cannot cover the destination.
         details.open = false;
 
-        // Keep the URL hash in sync without triggering the browser's default jump.
-        if (history.replaceState) {
-          history.replaceState(null, '', '#' + id);
-        }
-
-        // Account for the sticky site header when positioning the section.
-        var header = document.querySelector('.top');
-        var headerHeight = header ? header.getBoundingClientRect().height : 0;
-        var top = target.getBoundingClientRect().top + window.pageYOffset - headerHeight - 12;
-
-        window.scrollTo({
-          top: Math.max(0, top),
-          behavior: 'smooth'
+        // Wait for the disclosure to collapse, then scroll deterministically.
+        requestAnimationFrame(function () {
+          var header = document.querySelector('.top');
+          var headerHeight = header ? header.getBoundingClientRect().height : 0;
+          var top = target.getBoundingClientRect().top + window.pageYOffset - headerHeight - 12;
+          window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+          if (history.replaceState) history.replaceState(null, '', '#' + id);
         });
       });
     });
+
+    details.addEventListener('toggle', function () {
+      if (!widget.classList.contains('mnit-nav-visible')) details.open = false;
+    });
+
+    window.addEventListener('scroll', updateVisibility, { passive: true });
+    window.addEventListener('resize', updateVisibility);
+    updateVisibility();
   }
 
   if (document.readyState === 'loading') {
@@ -65,8 +77,5 @@ script = r'''<script id="mnit-mobile-toc-fix">
 </script>
 '''
 
-# Avoid duplicate injection if the deployment patch runs more than once.
-text = re.sub(r'\s*<script id="mnit-mobile-toc-fix">.*?</script>\s*', '\n', text, flags=re.S)
-text = text.replace(marker, script + marker, 1)
-
+text = text.replace('</body>', script + '</body>', 1)
 path.write_text(text, encoding='utf-8')
