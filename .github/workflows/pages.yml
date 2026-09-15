@@ -25,6 +25,8 @@ jobs:
         run: python3 scripts/generate-search-index.py
       - name: Patch moved-page search routes
         run: python3 scripts/patch-search-index.py
+      - name: Sanitize MNIT Jaipur overview
+        run: python3 scripts/patch-mnit-jaipur-overview.py
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
