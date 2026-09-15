@@ -13,14 +13,19 @@ text = text.replace(
     '<div class="mobile" id="mobileToc"><details id="mobileTocDetails"><summary>On this page</summary>',
     1,
 )
-text = text.replace(
-    '<div class="mobile" id="mobileToc"><details id="mobileTocDetails"><summary>On this page</summary>',
-    '<div class="mobile" id="mobileToc"><details id="mobileTocDetails"><summary>On this page</summary>',
-    1,
-)
 
-# Replace the previous navigation script so the build remains idempotent.
+# Replace previous generated navigation helpers so the build remains idempotent.
+text = re.sub(r'\s*<style id="mnit-mobile-toc-style">.*?</style>\s*', '\n', text, flags=re.S)
 text = re.sub(r'\s*<script id="mnit-mobile-toc-fix">.*?</script>\s*', '\n', text, flags=re.S)
+
+style = r'''<style id="mnit-mobile-toc-style">
+@media (max-width:900px){
+  .mobile{opacity:0;visibility:hidden;pointer-events:none;transform:translateY(-6px);transition:opacity .18s ease,transform .18s ease,visibility .18s ease}
+  .mobile.mnit-nav-visible{opacity:1;visibility:visible;pointer-events:auto;transform:none}
+  .mobile.mnit-nav-visible details nav{display:grid!important}
+}
+</style>
+'''
 
 script = r'''<script id="mnit-mobile-toc-fix">
 (function () {
@@ -31,7 +36,8 @@ script = r'''<script id="mnit-mobile-toc-fix">
     if (!widget || !details || !hero) return;
 
     function updateVisibility() {
-      // Hidden while the hero is visible; fixed only after the hero has passed.
+      // The control is completely hidden while the hero is on screen.
+      // It becomes fixed/interactive only after the hero has passed.
       var visible = hero.getBoundingClientRect().bottom <= 0;
       widget.classList.toggle('mnit-nav-visible', visible);
       if (!visible) details.open = false;
@@ -48,7 +54,6 @@ script = r'''<script id="mnit-mobile-toc-fix">
         event.preventDefault();
         details.open = false;
 
-        // Wait for the disclosure to collapse, then scroll deterministically.
         requestAnimationFrame(function () {
           var header = document.querySelector('.top');
           var headerHeight = header ? header.getBoundingClientRect().height : 0;
@@ -77,5 +82,6 @@ script = r'''<script id="mnit-mobile-toc-fix">
 </script>
 '''
 
+text = text.replace('</head>', style + '</head>', 1)
 text = text.replace('</body>', script + '</body>', 1)
 path.write_text(text, encoding='utf-8')
