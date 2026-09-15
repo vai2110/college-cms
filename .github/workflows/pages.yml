@@ -29,6 +29,8 @@ jobs:
         run: python3 scripts/patch-mnit-jaipur-overview.py
       - name: Expand Jaipuria Jaipur FAQs
         run: python3 scripts/patch-jaipuria-jaipur-faq.py
+      - name: Normalize college hero containers
+        run: python3 scripts/normalize-hero.py
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
