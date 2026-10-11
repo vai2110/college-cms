@@ -45,6 +45,7 @@ The core columns are `slug`, `headline`, `seoTitle`, `description`, `category`, 
 Recommended statuses:
 
 - `Idea` — an idea only; never sent to the CMS.
+- `Generate Draft` — topic and source URL are entered; the CMS generates a source-grounded draft and writes generated fields back to this row. This is not a publish action.
 - `Draft` — being researched or written; never sent to the CMS.
 - `Ready for Review` — ready to enter the CMS review queue.
 - `In CMS Review` — an editor has opened the story for review.
