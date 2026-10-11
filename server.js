@@ -280,11 +280,6 @@ async function fetchSourceArticle(url) {
   if (!response.ok) throw new Error('Could not open the source URL (HTTP ' + response.status + ').');
   const html = await response.text();
   const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-  const meta = name => {
-    const re = new RegExp('<meta[^>]+(?:property|name)=["\\'](?:og:image|twitter:image|description|og:description)["\\'][^>]+content=["\\']([^"\\']+)["\\']', 'i');
-    const match = html.match(re);
-    return match ? match[1].replace(/&amp;/g, '&').trim() : '';
-  };
   const ogMatch = html.match(/<meta[^>]+(?:property|name)=["'](?:og:image|twitter:image)["'][^>]+content=["']([^"']+)["']/i) || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["'](?:og:image|twitter:image)["']/i);
   let image = '';
   try { if (ogMatch) image = new URL(ogMatch[1].replace(/&amp;/g,'&'), response.url || parsed.href).href; } catch {}
