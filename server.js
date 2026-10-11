@@ -217,7 +217,9 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-app.get('/newsroom', (req, res) => res.sendFile(path.join(ROOT, 'public', 'newsroom.html')));\n\napp.post('/api/logout', requireAuth, (req, res) => {
+app.get('/newsroom', (req, res) => res.sendFile(path.join(ROOT, 'public', 'newsroom.html')));
+
+app.post('/api/logout', requireAuth, (req, res) => {
   req.session.destroy(() => res.json({ ok: true }));
 });
 
