@@ -6,7 +6,7 @@ const server = fs.readFileSync("server.js", "utf8");
 new vm.Script(server, { filename: "server.js" });
 
 const page = fs.readFileSync("public/newsroom.html", "utf8");
-const scripts = [...page.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/gi)];
+const scripts = [...page.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)];
 if (!scripts.length) throw new Error("Newsroom page has no inline JavaScript to validate.");
 scripts.forEach((match, index) => new vm.Script(match[1], { filename: "public/newsroom.html script " + (index + 1) }));
 
