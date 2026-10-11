@@ -22,6 +22,8 @@ Configure these on the CollegeCMS host (for example, the Render service running 
 - `WEBSITE_BRANCH=main`
 - `NEWS_SHEET_WEBAPP_URL` — the deployed Google Apps Script web app URL
 - `NEWS_SHEET_API_SECRET` — the same long random secret stored in Apps Script project properties
+- `OPENAI_API_KEY` — server-side API key used to draft articles from the supplied source page
+- `OPENAI_NEWS_MODEL` — optional model override; defaults to `gpt-4.1-mini`
 
 Do not put either newsroom secret in browser JavaScript, a public sheet, or the website repository.
 
