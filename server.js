@@ -507,7 +507,7 @@ app.post('/api/sync/discover', async (req, res) => {
     );
 
     const htmlFiles = (tree.tree || [])
-      .filter(item => item.type === 'blob' && item.path.endsWith('.html'));
+      .filter(item => item.type === 'blob' && item.path.endsWith('.html') && !item.path.includes('/') && item.path !== 'index.html');
 
     const data = load();
     const added = [];
