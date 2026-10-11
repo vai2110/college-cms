@@ -149,8 +149,12 @@ function normaliseNewsArticle(input, publish = false) {
   if (description.length < 50 || description.length > 220) throw new Error('Description must be 50–220 characters.');
   if (!categories.includes(a.category)) throw new Error('Choose a valid news category.');
   const sourceLinks = Array.isArray(a.sourceLinks) ? a.sourceLinks : [];
-  if (!sourceLinks.length || sourceLinks.some(s => !s || !String(s.label || '').trim() || !/^https:\/\//i.test(String(s.url || '')))) {
-    throw new Error('Add at least one labelled HTTPS source link.');
+  const sourceValid = link => {
+    if (!link || !String(link.label || '').trim()) return false;
+    try { return new URL(String(link.url || '')).protocol === 'https:'; } catch { return false; }
+  };
+  if (!sourceLinks.length || sourceLinks.some(link => !sourceValid(link))) {
+    throw new Error('Add at least one labelled, valid HTTPS source link.');
   }
   const body = Array.isArray(a.body) ? a.body : [];
   if (!body.length || body.some(s => !s || !String(s.heading || '').trim() || !Array.isArray(s.paragraphs) || !s.paragraphs.some(p => String(p || '').trim()))) {
@@ -161,6 +165,16 @@ function normaliseNewsArticle(input, publish = false) {
     if (typeof v === 'string' && v.trim()) { try { const parsed = JSON.parse(v); return Array.isArray(parsed) ? parsed : fallback; } catch { return fallback; } }
     return fallback;
   };
+  const relatedPages = parseArray(a.relatedPages);
+  if (relatedPages.some(link => {
+    if (!link || !String(link.label || '').trim() || !String(link.url || '').trim()) return true;
+    const url = String(link.url).trim();
+    return !(url.startsWith('/') && !url.startsWith('//') && !url.includes('..') && !url.includes('#'));
+  })) {
+    throw new Error('Internal links must use a local path beginning with /, without //, .. or URL fragments.');
+  }
+  const relatedNews = parseArray(a.relatedNews, typeof a.relatedNews === 'string' ? a.relatedNews.split('|').map(x => x.trim()).filter(Boolean) : []);
+  if (relatedNews.some(value => !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(String(value)))) throw new Error('Related news entries must be valid article slugs.');
   const datePublished = publish ? now() : (a.datePublished || now());
   const result = {
     slug: slugValue, headline, seoTitle: String(a.seoTitle || '').trim(),
@@ -170,8 +184,8 @@ function normaliseNewsArticle(input, publish = false) {
     summary: String(a.summary || '').trim(),
     image: String(a.image || '').trim(), imageAlt: String(a.imageAlt || '').trim(),
     body, sourceLinks,
-    relatedPages: parseArray(a.relatedPages),
-    relatedNews: parseArray(a.relatedNews, typeof a.relatedNews === 'string' ? a.relatedNews.split('|').map(x => x.trim()).filter(Boolean) : []),
+    relatedPages,
+    relatedNews,
     keywords: parseArray(a.keywords, typeof a.keywords === 'string' ? a.keywords.split('|').map(x => x.trim()).filter(Boolean) : [])
   };
   if (result.image && !/^https:\/\//i.test(result.image) && !result.image.startsWith('/')) throw new Error('Image must be an HTTPS URL or a site-relative path.');
