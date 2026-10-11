@@ -30,7 +30,7 @@ Do not put either newsroom secret in browser JavaScript, a public sheet, or the 
 1. Open the newsroom spreadsheet and open **Extensions → Apps Script**.
 2. Replace the project code with `integrations/google-sheets/NewsroomSync.gs` from the website repository.
 3. In Apps Script **Project Settings → Script Properties**, add `NEWS_SHEET_API_SECRET` with the exact same value as the CMS environment variable.
-4. Deploy as a **Web app**. Execute as the spreadsheet owner. Restrict access to the narrowest audience supported by your Workspace/account setup; the shared secret is still required for every request.
+4. Deploy as a **Web app** and execute as the spreadsheet owner. Because the CMS server calls it without a Google user session, enable the anonymous/Anyone access option if your account permits it; every request is still checked against the long random shared secret. If your Workspace policy blocks anonymous web apps, stop here and use an OAuth-based integration rather than weakening your organisation's policy.
 5. Copy the deployed web app URL into `NEWS_SHEET_WEBAPP_URL` on the CMS host.
 6. Ensure the spreadsheet tab is named **News Queue**. The script adds any missing headers while preserving existing columns and data.
 
