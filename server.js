@@ -271,6 +271,39 @@ app.get('/api/newsroom/drafts', async (req, res) => {
   }
 });
 
+app.get('/api/newsroom/published', async (req, res) => {
+  try {
+    const file = await getWebsiteFile('data/news.json');
+    let data;
+    try {
+      data = JSON.parse(file.html);
+    } catch {
+      throw new Error('Website data/news.json is not valid JSON.');
+    }
+    const items = Array.isArray(data) ? data : (Array.isArray(data.items) ? data.items : []);
+    const published = items
+      .filter(item => item && item.status === 'published' && item.slug)
+      .map(item => ({
+        slug: String(item.slug),
+        headline: String(item.headline || item.slug),
+        seoTitle: String(item.seoTitle || ''),
+        description: String(item.description || ''),
+        summary: String(item.summary || ''),
+        category: String(item.category || 'Uncategorised'),
+        datePublished: item.datePublished || null,
+        dateModified: item.dateModified || null,
+        image: String(item.image || ''),
+        sourceLinks: Array.isArray(item.sourceLinks) ? item.sourceLinks : [],
+        articleUrl: NEWS_SITE_URL + '/news/' + encodeURIComponent(String(item.slug)),
+        bodySections: Array.isArray(item.body) ? item.body.length : 0
+      }))
+      .sort((a, b) => Date.parse(b.datePublished || 0) - Date.parse(a.datePublished || 0));
+    res.json({ ok: true, items: published });
+  } catch (error) {
+    res.status(502).json({ error: error.message });
+  }
+});
+
 async function fetchSourceArticle(url) {
   let parsed;
   try { parsed = new URL(url); } catch { throw new Error('Enter a valid official source URL.'); }
