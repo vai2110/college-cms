@@ -293,7 +293,13 @@ app.get('/api/newsroom/published', async (req, res) => {
         datePublished: item.datePublished || null,
         dateModified: item.dateModified || null,
         image: String(item.image || ''),
+        imageAlt: String(item.imageAlt || ''),
+        author: String(item.author || ''),
+        body: Array.isArray(item.body) ? item.body : [],
         sourceLinks: Array.isArray(item.sourceLinks) ? item.sourceLinks : [],
+        relatedPages: Array.isArray(item.relatedPages) ? item.relatedPages : [],
+        relatedNews: Array.isArray(item.relatedNews) ? item.relatedNews : [],
+        keywords: Array.isArray(item.keywords) ? item.keywords : [],
         articleUrl: NEWS_SITE_URL + '/news/' + encodeURIComponent(String(item.slug)),
         bodySections: Array.isArray(item.body) ? item.body.length : 0
       }))
