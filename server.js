@@ -321,9 +321,23 @@ function normaliseQueueItem(raw) {
     || String((sourceLinks.find(link => link && typeof link.url === 'string' && /^https?:\/\//i.test(link.url)) || {}).url || '').trim();
   // The source sheet may contain an official URL beginning with http://.
   // Upgrade it to HTTPS for the CMS fetcher and preserve the source host/path.
-  const embeddedUrlMatch = JSON.stringify(item).match(/https?:\\/\\/[^\\s"'<>\\\\]+/i);
-  const resolvedSourceUrl = rawSourceUrl || (embeddedUrlMatch ? embeddedUrlMatch[0].replace(/[),.;]+$/, '') : '');
-  const sourceUrl = resolvedSourceUrl.replace(/^http:\/\//i, 'https://');
+  const serialisedItem = JSON.stringify(item);
+  let embeddedSourceUrl = '';
+  for (const protocol of ['https://', 'http://']) {
+    const start = serialisedItem.indexOf(protocol);
+    if (start < 0) continue;
+    let end = start;
+    while (end < serialisedItem.length && !['"', "'", '\\', ' ', '\n', '\r', '<', '>'].includes(serialisedItem[end])) end++;
+    embeddedSourceUrl = serialisedItem.slice(start, end);
+    while (embeddedSourceUrl.length && [')', ',', '.', ';'].includes(embeddedSourceUrl[embeddedSourceUrl.length - 1])) {
+      embeddedSourceUrl = embeddedSourceUrl.slice(0, -1);
+    }
+    break;
+  }
+  const resolvedSourceUrl = rawSourceUrl || embeddedSourceUrl;
+  const sourceUrl = resolvedSourceUrl.startsWith('http://')
+    ? 'https://' + resolvedSourceUrl.slice('http://'.length)
+    : resolvedSourceUrl;
   const headline = String(item.headline || item.topic || item.title || item.slug || '').trim();
   const sourceRow = Number(item.sourceRow || item.rowNumber || item.row);
   const missingRequired = !headline || !sourceUrl;
