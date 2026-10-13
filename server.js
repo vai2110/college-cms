@@ -184,11 +184,11 @@ function normaliseNewsArticle(input, publish = false) {
   if (customHtml.length > 100000) throw new Error('Article HTML must be 100 KB or smaller.');
   // Keep only common editorial HTML tags and remove executable content/attributes.
   const safeCustomHtml = customHtml
-    .replace(/<\\s*(script|style|iframe|object|embed|form|input|button|textarea|select)[^>]*>[\\s\\S]*?<\\s*\\/\\s*\\1\\s*>/gi, '')
-    .replace(/<\\s*(script|style|iframe|object|embed|form|input|button|textarea|select)\\b[^>]*\\/?\\s*>/gi, '')
-    .replace(/\\s+on[a-z]+\\s*=\\s*(?:"[^"]*"|'[^']*'|[^\\s>]+)/gi, '')
-    .replace(/\\s+(href|src)\\s*=\\s*(["'])\\s*javascript:[\\s\\S]*?\\2/gi, '')
-    .replace(/<\\/?(?!p\\b|h2\\b|h3\\b|h4\\b|ul\\b|ol\\b|li\\b|strong\\b|b\\b|em\\b|i\\b|a\\b|blockquote\\b|br\\b|hr\\b|table\\b|thead\\b|tbody\\b|tr\\b|th\\b|td\\b|figure\\b|figcaption\\b|img\\b|div\\b|span\\b)[a-z][^>]*>/gi, '');
+    .replace(/<\s*(script|style|iframe|object|embed|form|input|button|textarea|select)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, '')
+    .replace(/<\s*(script|style|iframe|object|embed|form|input|button|textarea|select)\b[^>]*\/?\s*>/gi, '')
+    .replace(/\s+on[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+    .replace(/\s+(href|src)\s*=\s*(["'])\s*javascript:[\s\S]*?\2/gi, '')
+    .replace(/<\/?(?!p\b|h2\b|h3\b|h4\b|ul\b|ol\b|li\b|strong\b|b\b|em\b|i\b|a\b|blockquote\b|br\b|hr\b|table\b|thead\b|tbody\b|tr\b|th\b|td\b|figure\b|figcaption\b|img\b|div\b|span\b)[a-z][^>]*>/gi, '');
   const parseArray = (v, fallback = []) => {
     if (Array.isArray(v)) return v;
     if (typeof v === 'string' && v.trim()) { try { const parsed = JSON.parse(v); return Array.isArray(parsed) ? parsed : fallback; } catch { return fallback; } }
