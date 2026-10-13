@@ -98,6 +98,7 @@ function editPublishedArticle(item){
   editingPublished=true;
   $('editorHeading').textContent='Edit published article: '+item.headline;
   $('publish').textContent='Save changes to live article';
+  if(item.customHtml){manualMode=true;$('structuredBodyField').style.display='none';$('manualContentField').style.display='block';$('generateDraft').style.display='none';$('markReview').style.display='none';$('requestChanges').style.display='none';setManualContent(item.customHtml);}
   $('confirmVerified').checked=false;
   $('editor').scrollIntoView({behavior:'smooth',block:'start'});
   note('You are editing a live article. Saving will update the existing article at the same URL; the publish date and URL slug will be preserved.');
