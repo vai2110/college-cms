@@ -407,6 +407,7 @@ app.get('/api/newsroom/published', async (req, res) => {
         imageAlt: String(item.imageAlt || ''),
         author: String(item.author || ''),
         body: Array.isArray(item.body) ? item.body : [],
+        customHtml: String(item.customHtml || ''),
         sourceLinks: Array.isArray(item.sourceLinks) ? item.sourceLinks : [],
         relatedPages: Array.isArray(item.relatedPages) ? item.relatedPages : [],
         relatedNews: Array.isArray(item.relatedNews) ? item.relatedNews : [],
