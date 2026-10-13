@@ -120,6 +120,26 @@ async function putWebsiteFile(targetPath, html, message) {
   );
 }
 
+async function putWebsiteBinaryFile(targetPath, buffer, message) {
+  if (!GITHUB_TOKEN) throw new Error('GitHub publishing is not configured. Add GITHUB_TOKEN to your deployment environment variables.');
+  let sha = null;
+  try {
+    sha = (await getWebsiteFile(targetPath)).sha;
+  } catch (error) {
+    if (!/Not Found|404/i.test(error.message)) throw error;
+  }
+  return githubRequest(
+    'PUT',
+    `/repos/${WEBSITE_OWNER}/${WEBSITE_REPO}/contents/${encodeURIComponent(targetPath)}`,
+    {
+      message,
+      content: buffer.toString('base64'),
+      branch: WEBSITE_BRANCH,
+      ...(sha ? { sha } : {})
+    }
+  );
+}
+
 function sheetRequest(payload) {
   if (!NEWS_SHEET_WEBAPP_URL || !NEWS_SHEET_API_SECRET) {
     throw new Error('Google Sheets newsroom sync is not configured. Add NEWS_SHEET_WEBAPP_URL and NEWS_SHEET_API_SECRET to the CMS environment.');
@@ -260,6 +280,30 @@ app.get('/api/publish-history', (req, res) => {
     .map(page => ({ college: college.name, page: page.name, publishedAt: page.publishedAt || null, status: page.status, targetPath: page.targetPath || null, lastCommit: page.lastCommit || null })));
   items.sort((a,b) => Date.parse(b.publishedAt || 0) - Date.parse(a.publishedAt || 0));
   res.json(items.slice(0, 100));
+});
+
+app.post('/api/newsroom/upload-image', async (req, res) => {
+  try {
+    if (!GITHUB_TOKEN) return res.status(503).json({ error: 'Website image upload is not configured. Add GITHUB_TOKEN to the CollegeCMS server environment.' });
+    const dataUrl = String(req.body.dataUrl || '');
+    const articleSlug = String(req.body.slug || '').trim().toLowerCase();
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(articleSlug)) return res.status(400).json({ error: 'Enter a valid article slug before uploading the image.' });
+    const match = dataUrl.match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
+    if (!match) return res.status(400).json({ error: 'Choose a valid JPG, PNG or WebP image.' });
+    const mime = match[1];
+    const buffer = Buffer.from(match[2], 'base64');
+    if (!buffer.length || buffer.length > 8 * 1024 * 1024) return res.status(413).json({ error: 'Image must be non-empty and 8 MB or smaller.' });
+    const isJpeg = mime === 'image/jpeg' && buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+    const isPng = mime === 'image/png' && buffer.length >= 8 && buffer.subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10]));
+    const isWebp = mime === 'image/webp' && buffer.length >= 12 && buffer.toString('ascii',0,4) === 'RIFF' && buffer.toString('ascii',8,12) === 'WEBP';
+    if (!(isJpeg || isPng || isWebp)) return res.status(400).json({ error: 'The file content does not match a supported image format.' });
+    const ext = mime === 'image/jpeg' ? 'jpg' : (mime === 'image/png' ? 'png' : 'webp');
+    const targetPath = 'images/news/' + articleSlug + '.' + ext;
+    const result = await putWebsiteBinaryFile(targetPath, buffer, 'Upload newsroom featured image: ' + articleSlug);
+    res.json({ ok: true, imagePath: '/' + targetPath, commit: result.commit?.sha || null });
+  } catch (error) {
+    res.status(400).json({ error: error.message || 'Image upload failed.' });
+  }
 });
 
 app.get('/api/newsroom/drafts', async (req, res) => {
