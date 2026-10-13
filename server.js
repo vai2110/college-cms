@@ -317,16 +317,27 @@ app.get('/api/newsroom/drafts', async (req, res) => {
 
 app.get('/api/newsroom/published', async (req, res) => {
   try {
-    const file = await getWebsiteFile('data/news.json');
+    let raw;
+    try {
+      const file = await getWebsiteFile('data/news.json');
+      raw = file.html;
+    } catch (privateRepoError) {
+      // The newsroom list is read-only; fall back to the public live data file
+      // so published stories remain visible even if the GitHub API token is unavailable.
+      const publicUrl = 'https://raw.githubusercontent.com/' + WEBSITE_OWNER + '/' + WEBSITE_REPO + '/' + encodeURIComponent(WEBSITE_BRANCH) + '/data/news.json';
+      const response = await fetch(publicUrl, { headers: { accept: 'application/json' } });
+      if (!response.ok) throw new Error('Could not read the live news index from GitHub (' + response.status + '). Check the website repository and branch settings.');
+      raw = await response.text();
+    }
     let data;
     try {
-      data = JSON.parse(file.html);
+      data = JSON.parse(raw);
     } catch {
       throw new Error('Website data/news.json is not valid JSON.');
     }
     const items = Array.isArray(data) ? data : (Array.isArray(data.items) ? data.items : []);
     const published = items
-      .filter(item => item && item.status === 'published' && item.slug)
+      .filter(item => item && String(item.status || '').toLowerCase() === 'published' && item.slug)
       .map(item => ({
         slug: String(item.slug),
         headline: String(item.headline || item.slug),
@@ -348,7 +359,7 @@ app.get('/api/newsroom/published', async (req, res) => {
         bodySections: Array.isArray(item.body) ? item.body.length : 0
       }))
       .sort((a, b) => Date.parse(b.datePublished || 0) - Date.parse(a.datePublished || 0));
-    res.json({ ok: true, items: published });
+    res.json({ ok: true, items: published, source: 'live-news-index' });
   } catch (error) {
     res.status(502).json({ error: error.message });
   }
