@@ -443,7 +443,18 @@ app.post('/api/newsroom/generate', async (req, res) => {
     const sourceRow = Number(req.body.sourceRow);
     if (topic.length < 5 || topic.length > 180) return res.status(400).json({ error: 'Topic/headline must be 5–180 characters.' });
     if (!Number.isInteger(sourceRow) || sourceRow < 2) return res.status(400).json({ error: 'A valid source spreadsheet row is required.' });
-    const source = await fetchSourceArticle(sourceUrl);
+    const pastedSourceText = String(req.body.sourceText || '').trim();
+    let source;
+    if (pastedSourceText.length >= 300) {
+      source = {
+        url: sourceUrl,
+        title: String(req.body.sourceTitle || '').trim(),
+        image: '',
+        text: pastedSourceText.slice(0, 18000)
+      };
+    } else {
+      source = await fetchSourceArticle(sourceUrl);
+    }
     const apiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + process.env.OPENAI_API_KEY, 'Content-Type': 'application/json' },
