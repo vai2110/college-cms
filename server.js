@@ -321,8 +321,10 @@ function normaliseQueueItem(raw) {
     || String((sourceLinks.find(link => link && typeof link.url === 'string' && /^https?:\/\//i.test(link.url)) || {}).url || '').trim();
   // The source sheet may contain an official URL beginning with http://.
   // Upgrade it to HTTPS for the CMS fetcher and preserve the source host/path.
-  const sourceUrl = rawSourceUrl.replace(/^http:\/\//i, 'https://');
-  const headline = String(item.headline || item.topic || item.slug || '').trim();
+  const embeddedUrlMatch = JSON.stringify(item).match(/https?:\\/\\/[^\\s"'<>\\\\]+/i);
+  const resolvedSourceUrl = rawSourceUrl || (embeddedUrlMatch ? embeddedUrlMatch[0].replace(/[),.;]+$/, '') : '');
+  const sourceUrl = resolvedSourceUrl.replace(/^http:\/\//i, 'https://');
+  const headline = String(item.headline || item.topic || item.title || item.slug || '').trim();
   const sourceRow = Number(item.sourceRow || item.rowNumber || item.row);
   const missingRequired = !headline || !sourceUrl;
   return {
