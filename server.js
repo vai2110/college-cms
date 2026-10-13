@@ -306,10 +306,38 @@ app.post('/api/newsroom/upload-image', async (req, res) => {
   }
 });
 
+function parseNewsroomArray(value) {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string' && value.trim()) {
+    try { const parsed = JSON.parse(value); return Array.isArray(parsed) ? parsed : []; } catch {}
+  }
+  return [];
+}
+
+function normaliseQueueItem(raw) {
+  const item = raw && typeof raw === 'object' ? { ...raw } : {};
+  const sourceLinks = parseNewsroomArray(item.sourceLinks);
+  const sourceUrl = String(item.sourceUrl || item.sourceURL || item.officialSourceUrl || '').trim()
+    || String((sourceLinks.find(link => link && typeof link.url === 'string' && /^https:\/\//i.test(link.url)) || {}).url || '').trim();
+  const headline = String(item.headline || item.topic || item.slug || '').trim();
+  const sourceRow = Number(item.sourceRow || item.rowNumber || item.row);
+  const missingRequired = !headline || !sourceUrl;
+  return {
+    ...item,
+    headline,
+    topic: String(item.topic || headline),
+    sourceUrl,
+    sourceLinks,
+    ...(Number.isInteger(sourceRow) && sourceRow >= 2 ? { sourceRow } : {}),
+    queueError: missingRequired ? 'Missing headline/topic or official source URL. Check the row fields.' : ''
+  };
+}
+
 app.get('/api/newsroom/drafts', async (req, res) => {
   try {
     const result = await sheetRequest({ action: 'getDrafts' });
-    res.json({ ok: true, items: Array.isArray(result.items) ? result.items : [] });
+    const items = Array.isArray(result.items) ? result.items.map(normaliseQueueItem) : [];
+    res.json({ ok: true, items });
   } catch (error) {
     res.status(502).json({ error: error.message });
   }
