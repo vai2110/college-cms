@@ -16,6 +16,7 @@
 <h1 id="editorHeading">Review a news draft</h1><p class="muted">Check facts against the original sources. Edit fields here before publishing. The live website is updated only when you press Publish approved article.</p>
 <div id="notice" class="notice"></div>
 <a id="publishedPreview" class="btn primary preview-link" href="#" target="_blank" rel="noopener noreferrer">Preview published article ↗</a>
+<button class="btn primary" type="button" id="newManualArticle" style="margin:14px 0">+ New manual article</button>
 <div id="editorEmpty" class="empty">Select a draft from the queue to review it. No sample or placeholder article is published automatically.</div>
 <form id="editor" style="display:none">
 <input type="hidden" id="sourceSlug"><input type="hidden" id="sourceRow"><input type="hidden" id="topic"><input type="hidden" id="sourceUrl">
@@ -63,7 +64,7 @@
 </div>
 <div class="field"><label for="reviewNotes">Editorial note / change request (if applicable)</label><textarea id="reviewNotes" style="min-height:70px;font-family:Arial,Helvetica,sans-serif"></textarea></div>
 <label class="confirm"><input type="checkbox" id="confirmVerified"><span>I have checked the article’s factual claims against the linked sources, confirmed the links work, and reviewed the internal links. I understand publishing updates the live CollegeDecoded website.</span></label>
-<div class="actions"><button class="btn" type="button" id="newManualArticle">+ New manual article</button><button class="btn" type="button" id="markReview">Mark In CMS Review</button><button class="btn warn" type="button" id="requestChanges">Request changes</button><button class="btn primary" type="submit" id="publish">Publish approved article</button></div>
+<div class="actions"><button class="btn" type="button" id="markReview">Mark In CMS Review</button><button class="btn warn" type="button" id="requestChanges">Request changes</button><button class="btn primary" type="submit" id="publish">Publish approved article</button></div>
 <p class="muted">On successful publish, CollegeCMS commits the article to <code>data/news.json</code>. Vercel then builds the article page, canonical metadata, NewsArticle structured data, internal links and sitemaps. Spreadsheet status sync errors are shown separately because they do not undo a successful website commit.</p>
 </form>
 </main>
